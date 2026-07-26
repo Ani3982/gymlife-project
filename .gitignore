@@ -1,0 +1,26 @@
+# Virtual Environment
+gymlife-master/venv/
+venv/
+.venv/
+
+# Node modules & build
+gymlife-master/frontend/node_modules/
+node_modules/
+gymlife-master/frontend/dist/
+dist/
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+gymlife-master/backend/server.err.log
+gymlife-master/backend/server.out.log
+gymlife-master/frontend/frontend.err.log
+gymlife-master/frontend/frontend.out.log
+
+# IDE & OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
