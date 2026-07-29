@@ -146,24 +146,24 @@ blogs = [
 # Create Pricing Plans
 plans = [
     PricingPlan.objects.create(
-        name='Basic Plan',
-        price='29.99',
-        period='Per Month',
-        features='Gym Access|Basic Equipment|Community Support',
+        name='Class drop-in',
+        price='39.00',
+        period='SINGLE CLASS',
+        features='Free riding, Unlimited equipments, Personal trainer, Weight loss class, Month to month, No incline restriction',
         order=1
     ),
     PricingPlan.objects.create(
-        name='Standard Plan',
-        price='59.99',
-        period='Per Month',
-        features='Gym Access|All Equipment|Personal Training (4x/month)|Community Support',
+        name='12 Month membership',
+        price='59.00',
+        period='SINGLE CLASS',
+        features='Free riding, Unlimited equipments, Personal trainer, Weight loss class, Month to month, No incline restriction',
         order=2
     ),
     PricingPlan.objects.create(
-        name='Premium Plan',
-        price='99.99',
-        period='Per Month',
-        features='24/7 Gym Access|All Equipment|Personal Training (Unlimited)|Nutrition Counseling|VIP Support',
+        name='6 Month membership',
+        price='99.00',
+        period='SINGLE CLASS',
+        features='Free riding, Unlimited equipments, Personal trainer, Weight loss class, Month to month, No incline restriction',
         order=3
     ),
 ]
@@ -176,7 +176,7 @@ ContactInfo.objects.create(
     google_map_iframe_url='https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2915.3658765432103!2d-71.92840232346802!3d42.71618097110682!2m3!1f0!2f0!3f0!3m2!1i1024!2i768'
 )
 
-print("✅ Database populated successfully!")
+print("Database populated successfully!")
 print(f"Created {Service.objects.count()} services")
 print(f"Created {Trainer.objects.count()} trainers")
 print(f"Created {ClassItem.objects.count()} classes")

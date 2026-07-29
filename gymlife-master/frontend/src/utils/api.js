@@ -12,62 +12,165 @@ const handleResponse = async (response) => {
   return response.json();
 };
 
+const DEFAULT_PRICING_PLANS = [
+  {
+    id: 1,
+    name: 'Class drop-in',
+    price: '39.0',
+    period: 'SINGLE CLASS',
+    features: [
+      'Free riding',
+      'Unlimited equipments',
+      'Personal trainer',
+      'Weight loss class',
+      'Month to month',
+      'No incline restriction'
+    ]
+  },
+  {
+    id: 2,
+    name: '12 Month membership',
+    price: '59.0',
+    period: 'SINGLE CLASS',
+    features: [
+      'Free riding',
+      'Unlimited equipments',
+      'Personal trainer',
+      'Weight loss class',
+      'Month to month',
+      'No incline restriction'
+    ]
+  },
+  {
+    id: 3,
+    name: '6 Month membership',
+    price: '99.0',
+    period: 'SINGLE CLASS',
+    features: [
+      'Free riding',
+      'Unlimited equipments',
+      'Personal trainer',
+      'Weight loss class',
+      'Month to month',
+      'No incline restriction'
+    ]
+  }
+];
+
+const DEFAULT_GALLERY = [
+  { id: 1, title: 'Gallery 1', image_url: '/img/gallery/gallery-1.jpg' },
+  { id: 2, title: 'Gallery 2', image_url: '/img/gallery/gallery-2.jpg' },
+  { id: 3, title: 'Gallery 3', image_url: '/img/gallery/gallery-3.jpg' },
+  { id: 4, title: 'Gallery 4', image_url: '/img/gallery/gallery-4.jpg' },
+  { id: 5, title: 'Gallery 5', image_url: '/img/gallery/gallery-5.jpg' },
+  { id: 6, title: 'Gallery 6', image_url: '/img/gallery/gallery-6.jpg' },
+  { id: 7, title: 'Gallery 7', image_url: '/img/gallery/gallery-7.jpg' },
+  { id: 8, title: 'Gallery 8', image_url: '/img/gallery/gallery-8.jpg' },
+  { id: 9, title: 'Gallery 9', image_url: '/img/gallery/gallery-9.jpg' },
+];
+
+const DEFAULT_CLASSES = [
+  { id: 1, name: 'WEIGHT LIFTING', category: 'STRENGTH', duration: '60 mins', image_url: '/img/classes/class-1.jpg' },
+  { id: 2, name: 'INDOOR CYCLING', category: 'CARDIO', duration: '45 mins', image_url: '/img/classes/class-2.jpg' },
+  { id: 3, name: 'KETTLEBELL POWER', category: 'STRENGTH', duration: '50 mins', image_url: '/img/classes/class-3.jpg' },
+  { id: 4, name: 'INDOOR CYCLING', category: 'CARDIO', duration: '45 mins', image_url: '/img/classes/class-4.jpg' },
+  { id: 5, name: 'BOXING', category: 'TRAINING', duration: '60 mins', image_url: '/img/classes/class-5.jpg' },
+];
+
+const DEFAULT_TRAINERS = [
+  { id: 1, name: 'Patrick Maguire', role: 'Athletic Trainer', image_url: '/img/team/team-1.jpg' },
+  { id: 2, name: 'CEntry Jordan', role: 'Athletic Trainer', image_url: '/img/team/team-2.jpg' },
+  { id: 3, name: 'Matt LeBlanc', role: 'Athletic Trainer', image_url: '/img/team/team-3.jpg' },
+  { id: 4, name: 'Rachel Green', role: 'Athletic Trainer', image_url: '/img/team/team-4.jpg' },
+];
+
+const DEFAULT_SERVICES = [
+  { id: 1, title: 'Modern equipment', description: 'State-of-the-art fitness equipment to enhance your workout experience.', icon: 'flaticon-034-stationary-bike' },
+  { id: 2, title: 'Healthy nutrition plan', description: 'Personalized nutrition plans tailored to your fitness goals.', icon: 'flaticon-033-juice' },
+  { id: 3, title: 'Professional training plan', description: 'Expert trainers to guide you through your fitness journey.', icon: 'flaticon-002-dumbell' },
+  { id: 4, title: 'Unique to your needs', description: 'Customized fitness programs based on your individual requirements.', icon: 'flaticon-014-heart-beat' },
+];
+
+const parsePlanFeatures = (plan) => {
+  let features = plan.features;
+  if (typeof features === 'string') {
+    if (features.includes('|')) {
+      features = features.split('|').map(f => f.trim()).filter(Boolean);
+    } else {
+      features = features.split(',').map(f => f.trim()).filter(Boolean);
+    }
+  }
+  return { ...plan, features: Array.isArray(features) ? features : [] };
+};
+
 export const api = {
   // Public endpoints
   getClasses: async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/classes/`);
-      return await handleResponse(res);
+      const data = await handleResponse(res);
+      if (Array.isArray(data) && data.length > 0) return data;
+      return DEFAULT_CLASSES;
     } catch (err) {
       console.error('Error fetching classes:', err);
-      return [];
+      return DEFAULT_CLASSES;
     }
   },
 
   getClassDetail: async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/classes/${id}/`);
-      return await handleResponse(res);
+      const data = await handleResponse(res);
+      if (data) return data;
+      return DEFAULT_CLASSES.find(c => c.id === Number(id)) || DEFAULT_CLASSES[0];
     } catch (err) {
       console.error('Error fetching class detail:', err);
-      return null;
+      return DEFAULT_CLASSES.find(c => c.id === Number(id)) || DEFAULT_CLASSES[0];
     }
   },
 
   getServices: async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/services/`);
-      return await handleResponse(res);
+      const data = await handleResponse(res);
+      if (Array.isArray(data) && data.length > 0) return data;
+      return DEFAULT_SERVICES;
     } catch (err) {
       console.error('Error fetching services:', err);
-      return [];
+      return DEFAULT_SERVICES;
     }
   },
 
   getTrainers: async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/trainers/`);
-      return await handleResponse(res);
+      const data = await handleResponse(res);
+      if (Array.isArray(data) && data.length > 0) return data;
+      return DEFAULT_TRAINERS;
     } catch (err) {
       console.error('Error fetching trainers:', err);
-      return [];
+      return DEFAULT_TRAINERS;
     }
   },
 
   getGallery: async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/gallery/`);
-      return await handleResponse(res);
+      const data = await handleResponse(res);
+      if (Array.isArray(data) && data.length > 0) return data;
+      return DEFAULT_GALLERY;
     } catch (err) {
       console.error('Error fetching gallery:', err);
-      return [];
+      return DEFAULT_GALLERY;
     }
   },
 
   getBlogs: async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/blogs/`);
-      return await handleResponse(res);
+      const data = await handleResponse(res);
+      if (Array.isArray(data) && data.length > 0) return data;
+      return [];
     } catch (err) {
       console.error('Error fetching blogs:', err);
       return [];
@@ -87,10 +190,14 @@ export const api = {
   getPricingPlans: async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/pricing-plans/`);
-      return await handleResponse(res);
+      const data = await handleResponse(res);
+      if (Array.isArray(data) && data.length > 0) {
+        return data.map(parsePlanFeatures);
+      }
+      return DEFAULT_PRICING_PLANS;
     } catch (err) {
       console.error('Error fetching pricing plans:', err);
-      return [];
+      return DEFAULT_PRICING_PLANS;
     }
   },
 
