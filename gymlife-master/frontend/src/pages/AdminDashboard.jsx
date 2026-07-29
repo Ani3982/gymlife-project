@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../utils/api';
+import api, { API_BASE_URL } from '../utils/api';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -48,17 +48,17 @@ const AdminDashboard = () => {
 
   const loadAllData = () => {
     setLoading(true);
-    // Fetch all entities
+    // Fetch all entities with fallbacks
     Promise.all([
-      fetch(`${API_BASE_URL}/api/admin/appointments/`, { headers: getHeaders() }).then(res => res.json()),
-      fetch(`${API_BASE_URL}/api/admin/messages/`, { headers: getHeaders() }).then(res => res.json()),
-      fetch(`${API_BASE_URL}/api/services/`).then(res => res.json()),
-      fetch(`${API_BASE_URL}/api/classes/`).then(res => res.json()),
-      fetch(`${API_BASE_URL}/api/trainers/`).then(res => res.json()),
-      fetch(`${API_BASE_URL}/api/pricing-plans/`).then(res => res.json()),
-      fetch(`${API_BASE_URL}/api/blogs/`).then(res => res.json()),
-      fetch(`${API_BASE_URL}/api/gallery/`).then(res => res.json()),
-      fetch(`${API_BASE_URL}/api/contact-info/`).then(res => res.json().catch(() => ({})))
+      fetch(`${API_BASE_URL}/api/admin/appointments/`, { headers: getHeaders() }).then(res => res.ok ? res.json() : []).catch(() => []),
+      fetch(`${API_BASE_URL}/api/admin/messages/`, { headers: getHeaders() }).then(res => res.ok ? res.json() : []).catch(() => []),
+      api.getServices(),
+      api.getClasses(),
+      api.getTrainers(),
+      api.getPricingPlans(),
+      fetch(`${API_BASE_URL}/api/blogs/`).then(res => res.ok ? res.json() : []).catch(() => []),
+      api.getGallery(),
+      api.getContactInfo().catch(() => ({}))
     ]).then(([appts, msgs, servs, clss, trns, plns, blgs, gall, info]) => {
       setAppointments(Array.isArray(appts) ? appts : []);
       setMessages(Array.isArray(msgs) ? msgs : []);
