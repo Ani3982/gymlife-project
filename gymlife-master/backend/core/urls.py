@@ -60,6 +60,7 @@ urlpatterns = [
     
     path('api/admin/contact-info/', views.admin_contact_info, name='admin_contact_info'),
     
-    # Catch-all to route all frontend routing requests to React SPA
-    re_path(r'^.*$', TemplateView.as_view(template_name='index.html'), name='react-app'),
+    # Root API health check response
+    path('', views.api_root_view, name='api-root'),
+    re_path(r'^.*$', views.api_root_view, name='api-root-fallback'),
 ]

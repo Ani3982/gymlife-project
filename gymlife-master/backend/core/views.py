@@ -1,4 +1,12 @@
 from django.shortcuts import render
+from django.http import JsonResponse
+
+def api_root_view(request):
+    return JsonResponse({
+        'status': 'online',
+        'app': 'GymLife Backend API',
+        'message': 'API server is running successfully'
+    })
 
 def index_view(request):
     return render(request, 'core/index.html')
