@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import Layout from './components/Layout';
 import NotFound from './pages/NotFound';
 import AboutUs from './pages/AboutUs';
@@ -20,6 +21,7 @@ import AdminDashboard from './pages/AdminDashboard';
 function App() {
   return (
     <BrowserRouter>
+      <SpeedInsights />
       <Routes>
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
