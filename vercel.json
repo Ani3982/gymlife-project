@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/gymlife-master/frontend/dist/$1"
+    }
+  ]
+}
