@@ -146,24 +146,24 @@ blogs = [
 # Create Pricing Plans
 plans = [
     PricingPlan.objects.create(
-        name='Class drop-in',
-        price='39.00',
-        period='SINGLE CLASS',
-        features='Free riding, Unlimited equipments, Personal trainer, Weight loss class, Month to month, No incline restriction',
+        name='Class Drop-in Pass',
+        price='499.00',
+        period='SINGLE PASS',
+        features='Full gym floor access, Locker & steam room, 1 group class included, Personal trainer intro, Free hydration station, Free Wi-Fi access',
         order=1
     ),
     PricingPlan.objects.create(
-        name='12 Month membership',
-        price='59.00',
-        period='SINGLE CLASS',
-        features='Free riding, Unlimited equipments, Personal trainer, Weight loss class, Month to month, No incline restriction',
+        name='12 Month VIP Membership',
+        price='14999.00',
+        period='12 MONTHS UNLIMITED',
+        features='24/7 Unlimited club access, InBody composition scan, Dedicated personal trainer, Unlimited group & spin classes, 2 Monthly guest passes, Sauna & recovery lounge',
         order=2
     ),
     PricingPlan.objects.create(
-        name='6 Month membership',
-        price='99.00',
-        period='SINGLE CLASS',
-        features='Free riding, Unlimited equipments, Personal trainer, Weight loss class, Month to month, No incline restriction',
+        name='6 Month Active Membership',
+        price='8999.00',
+        period='6 MONTHS ACCESS',
+        features='Unlimited club access, Certified fitness assessment, Nutrition strategy plan, Group HIIT & yoga classes, Locker & shower amenities, Free guest pass every month',
         order=3
     ),
 ]
@@ -173,7 +173,7 @@ ContactInfo.objects.create(
     address='333 Middle Winchendon Rd, Rindge, NH 03461',
     phone_numbers='125-711-811|125-668-886',
     email='Support.gymcenter@gmail.com',
-    google_map_iframe_url='https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2915.3658765432103!2d-71.92840232346802!3d42.71618097110682!2m3!1f0!2f0!3f0!3m2!1i1024!2i768'
+    google_map_iframe_url='https://maps.google.com/maps?q=333%20Middle%20Winchendon%20Rd%2C%20Rindge%2C%20NH%2003461&t=&z=14&ie=UTF8&iwloc=&output=embed'
 )
 
 print("Database populated successfully!")

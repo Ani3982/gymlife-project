@@ -166,6 +166,27 @@ const AdminLogin = () => {
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
+
+        <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <button 
+            onClick={() => navigate('/')} 
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#a3a3a3',
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'color 0.2s'
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.color = '#f36100'; }}
+            onMouseOut={(e) => { e.currentTarget.style.color = '#a3a3a3'; }}
+          >
+            <i className="fa fa-arrow-left"></i> Return to Main Website
+          </button>
+        </div>
       </div>
     </div>
   );

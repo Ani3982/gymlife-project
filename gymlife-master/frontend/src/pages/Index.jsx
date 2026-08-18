@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AppointmentSection from '../components/AppointmentSection';
+import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../utils/api';
 
 const Index = () => {
+  const { openAuthModal, isAuthenticated } = useAuth();
+  const { t, language } = useLanguage();
   const [classes, setClasses] = useState([]);
   const [pricingPlans, setPricingPlans] = useState([]);
   const [gallery, setGallery] = useState([]);
@@ -35,36 +39,41 @@ const Index = () => {
     fetchData();
   }, []);
 
+  // Re-init hero slider on mount and whenever language changes
   useEffect(() => {
     let $slider = null;
-    if (window.jQuery && window.jQuery.fn.owlCarousel) {
-      const $ = window.jQuery;
-      $slider = $(".hs-slider");
-      if ($slider.length > 0) {
-        if ($slider.data('owl.carousel')) {
-          $slider.owlCarousel('destroy');
+    let timer = setTimeout(() => {
+      if (window.jQuery && window.jQuery.fn.owlCarousel) {
+        const $ = window.jQuery;
+        $slider = $(".hs-slider");
+        if ($slider.length > 0) {
+          if ($slider.data('owl.carousel')) {
+            $slider.owlCarousel('destroy');
+          }
+          $slider.owlCarousel({
+            loop: true,
+            margin: 0,
+            nav: true,
+            items: 1,
+            dots: false,
+            animateOut: 'fadeOut',
+            animateIn: 'fadeIn',
+            navText: ['<i class="fa fa-angle-left"></i>', '<i class="fa fa-angle-right"></i>'],
+            smartSpeed: 1200,
+            autoHeight: false,
+            autoplay: false
+          });
         }
-        $slider.owlCarousel({
-          loop: true,
-          margin: 0,
-          nav: true,
-          items: 1,
-          dots: false,
-          animateOut: 'fadeOut',
-          animateIn: 'fadeIn',
-          navText: ['<i class="fa fa-angle-left"></i>', '<i class="fa fa-angle-right"></i>'],
-          smartSpeed: 1200,
-          autoHeight: false,
-          autoplay: false
-        });
       }
-    }
+    }, 50);
+
     return () => {
+      clearTimeout(timer);
       if ($slider && $slider.data('owl.carousel')) {
         $slider.owlCarousel('destroy');
       }
     };
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     let $slider = null;
@@ -103,7 +112,7 @@ const Index = () => {
         $slider.owlCarousel('destroy');
       }
     };
-  }, [trainers]);
+  }, [trainers, language]);
 
   useEffect(() => {
     let timer = null;
@@ -126,7 +135,6 @@ const Index = () => {
     };
   }, [gallery]);
 
-
   const getClassColClass = (index) => {
     if (index < 3) return "col-lg-4 col-md-6";
     if (index === 3) return "col-lg-6 col-md-6";
@@ -140,17 +148,28 @@ const Index = () => {
 
   return (
     <>
-      {/*  Hero Section Begin  */}
+      {/* Hero Section Begin */}
       <section className="hero-section">
-          <div className="hs-slider owl-carousel">
+          <div className="hs-slider owl-carousel" key={`hero-${language}`}>
               <div className="hs-item set-bg" data-setbg="/img/hero/hero-1.jpg" style={{ backgroundImage: "url('/img/hero/hero-1.jpg')" }}>
                   <div className="container">
                       <div className="row">
                           <div className="col-lg-6 offset-lg-6">
                               <div className="hi-text">
-                                  <span>Shape your body</span>
-                                  <h1>Be <strong>strong</strong> traning hard</h1>
-                                  <a href="#" className="primary-btn">Get info</a>
+                                  <span>{t('hero_shape_body', 'Shape your body & transform your life')}</span>
+                                  <h1>{t('hero_be_strong', 'Be strong training hard')}</h1>
+                                  <div className="hero-btn-group" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                    <button 
+                                      className="primary-btn" 
+                                      onClick={() => openAuthModal('register')}
+                                      style={{ border: 'none', cursor: 'pointer' }}
+                                    >
+                                      {t('claim_free_pass', 'Claim 3-Day Free Pass')}
+                                    </button>
+                                    <Link to="/class-timetable" className="primary-btn" style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
+                                      {t('view_timetable', 'View Timetable')}
+                                    </Link>
+                                  </div>
                               </div>
                           </div>
                       </div>
@@ -161,9 +180,20 @@ const Index = () => {
                       <div className="row">
                           <div className="col-lg-6 offset-lg-6">
                               <div className="hi-text">
-                                  <span>Shape your body</span>
-                                  <h1>Be <strong>strong</strong> traning hard</h1>
-                                  <a href="#" className="primary-btn">Get info</a>
+                                  <span>{t('hero_shape_body', 'Shape your body & transform your life')}</span>
+                                  <h1>{t('hero_be_strong', 'Be strong training hard')}</h1>
+                                  <div className="hero-btn-group" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                    <button 
+                                      className="primary-btn" 
+                                      onClick={() => openAuthModal('register')}
+                                      style={{ border: 'none', cursor: 'pointer' }}
+                                    >
+                                      {t('join_gymlife_today', 'Join GymLife Today')}
+                                    </button>
+                                    <Link to="/services" className="primary-btn" style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
+                                      {t('our_services', 'Our Services')}
+                                    </Link>
+                                  </div>
                               </div>
                           </div>
                       </div>
@@ -171,16 +201,16 @@ const Index = () => {
               </div>
           </div>
       </section>
-      {/*  Hero Section End  */}
+      {/* Hero Section End */}
 
-      {/*  ChoseUs Section Begin  */}
+      {/* ChoseUs Section Begin */}
       <section className="choseus-section spad">
           <div className="container">
               <div className="row">
                   <div className="col-lg-12">
                       <div className="section-title">
-                          <span>Why chose us?</span>
-                          <h2>PUSH YOUR LIMITS FORWARD</h2>
+                          <span>{t('why_choose_us', 'Why choose us?')}</span>
+                          <h2>{t('push_your_limits', 'PUSH YOUR LIMITS FORWARD')}</h2>
                       </div>
                   </div>
               </div>
@@ -188,48 +218,44 @@ const Index = () => {
                   <div className="col-lg-3 col-sm-6">
                       <div className="cs-item">
                           <span className="flaticon-034-stationary-bike"></span>
-                          <h4>Modern equipment</h4>
-                          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-                              dolore facilisis.</p>
+                          <h4>{t('modern_equipment', 'Modern equipment')}</h4>
+                          <p>{t('modern_equipment_desc', 'State-of-the-art bio-mechanical workout machines, Olympic barbells, and ergonomic strength training gear.')}</p>
                       </div>
                   </div>
                   <div className="col-lg-3 col-sm-6">
                       <div className="cs-item">
                           <span className="flaticon-033-juice"></span>
-                          <h4>Healthy nutrition plan</h4>
-                          <p>Quis ipsum suspendisse ultrices gravida. Risus commodo viverra maecenas accumsan lacus vel
-                              facilisis.</p>
+                          <h4>{t('healthy_nutrition', 'Healthy nutrition plan')}</h4>
+                          <p>{t('healthy_nutrition_desc', 'Custom meal guidance and macro coaching crafted by certified sports nutritionists for peak performance.')}</p>
                       </div>
                   </div>
                   <div className="col-lg-3 col-sm-6">
                       <div className="cs-item">
                           <span className="flaticon-002-dumbell"></span>
-                          <h4>Proffesponal training plan</h4>
-                          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-                              dolore facilisis.</p>
+                          <h4>{t('pro_training', 'Professional training plan')}</h4>
+                          <p>{t('pro_training_desc', 'Structured periodized workout regimens tailored by master trainers to achieve maximum muscle growth and fat loss.')}</p>
                       </div>
                   </div>
                   <div className="col-lg-3 col-sm-6">
                       <div className="cs-item">
                           <span className="flaticon-014-heart-beat"></span>
-                          <h4>Unique to your needs</h4>
-                          <p>Quis ipsum suspendisse ultrices gravida. Risus commodo viverra maecenas accumsan lacus vel
-                              facilisis.</p>
+                          <h4>{t('unique_needs', 'Unique to your needs')}</h4>
+                          <p>{t('unique_needs_desc', 'Personalized posture corrections, body composition analysis, and continuous progress tracking.')}</p>
                       </div>
                   </div>
               </div>
           </div>
       </section>
-      {/*  ChoseUs Section End  */}
+      {/* ChoseUs Section End */}
 
-      {/*  Classes Section Begin  */}
+      {/* Classes Section Begin */}
       <section className="classes-section spad">
           <div className="container">
               <div className="row">
                   <div className="col-lg-12">
                       <div className="section-title">
-                          <span>Our Classes</span>
-                          <h2>WHAT WE CAN OFFER</h2>
+                          <span>{t('our_classes', 'Our Classes')}</span>
+                          <h2>{t('what_we_offer', 'WHAT WE CAN OFFER')}</h2>
                       </div>
                   </div>
               </div>
@@ -255,34 +281,34 @@ const Index = () => {
               </div>
           </div>
       </section>
-      {/*  Classes Section End  */}
+      {/* Classes Section End */}
 
-      {/*  Banner Section Begin  */}
+      {/* Banner Section Begin */}
       <section className="banner-section set-bg" data-setbg="/img/banner-bg.jpg" style={{ backgroundImage: "url('/img/banner-bg.jpg')" }}>
           <div className="container">
               <div className="row">
                   <div className="col-lg-12 text-center">
                       <div className="bs-text">
-                          <h2>registration now to get more deals</h2>
-                          <div className="bt-tips">Where health, beauty and fitness meet.</div>
-                          <a href="#appointment-section" className="primary-btn  btn-normal">Appointment</a>
+                          <h2>{t('registration_banner_title', 'REGISTRATION NOW TO GET MORE DEALS')}</h2>
+                          <div className="bt-tips">{t('registration_banner_sub', 'Where health, beauty and fitness meet.')}</div>
+                          <a href="#appointment-section" className="primary-btn btn-normal">{t('appointment_title', 'Appointment')}</a>
                       </div>
                   </div>
               </div>
           </div>
       </section>
-      {/*  Banner Section End  */}
+      {/* Banner Section End */}
 
       <AppointmentSection />
 
-      {/*  Pricing Section Begin  */}
+      {/* Pricing Section Begin */}
       <section className="pricing-section spad">
           <div className="container">
               <div className="row">
                   <div className="col-lg-12">
                       <div className="section-title">
-                          <span>Our Plan</span>
-                          <h2>Choose your pricing plan</h2>
+                          <span>{t('pricing_title', 'Our Plan')}</span>
+                          <h2>{t('choose_pricing', 'Choose your pricing plan')}</h2>
                       </div>
                   </div>
               </div>
@@ -292,16 +318,22 @@ const Index = () => {
                           <div className="col-lg-4 col-md-8" key={plan.id}>
                               <div className="ps-item">
                                   <h3>{plan.name}</h3>
-                                  <div className="pi-price">
-                                      <h2>$ {plan.price}</h2>
-                                      <span>{plan.period}</span>
-                                  </div>
+                                   <div className="pi-price">
+                                       <h2>₹ {isNaN(Number(plan.price)) ? plan.price : Number(plan.price).toLocaleString('en-IN')}</h2>
+                                       <span>{plan.period}</span>
+                                   </div>
                                   <ul>
                                       {plan.features && plan.features.map((feature, idx) => (
                                           <li key={idx}>{feature}</li>
                                       ))}
                                   </ul>
-                                  <a href="#" className="primary-btn pricing-btn">Enroll now</a>
+                                  <button 
+                                      className="primary-btn pricing-btn" 
+                                      onClick={() => openAuthModal('register')}
+                                      style={{ border: 'none', width: '100%', cursor: 'pointer' }}
+                                   >
+                                      {t('enroll_now', 'Enroll now')}
+                                   </button>
                                   <a href="#" className="thumb-icon"><i className="fa fa-picture-o"></i></a>
                               </div>
                           </div>
@@ -312,9 +344,9 @@ const Index = () => {
               </div>
           </div>
       </section>
-      {/*  Pricing Section End  */}
+      {/* Pricing Section End */}
 
-      {/*  Gallery Section Begin  */}
+      {/* Gallery Section Begin */}
       <div className="gallery-section">
           <div className="gallery">
               <div className="grid-sizer"></div>
@@ -329,24 +361,24 @@ const Index = () => {
               )}
           </div>
       </div>
-      {/*  Gallery Section End  */}
+      {/* Gallery Section End */}
 
-      {/*  Team Section Begin  */}
+      {/* Team Section Begin */}
       <section className="team-section spad">
           <div className="container">
               <div className="row">
                   <div className="col-lg-12">
                       <div className="team-title">
                           <div className="section-title">
-                              <span>Our Team</span>
-                              <h2>TRAIN WITH EXPERTS</h2>
+                              <span>{t('trainer_title', 'Our Team')}</span>
+                              <h2>{t('trainer_sub', 'TRAIN WITH EXPERTS')}</h2>
                           </div>
-                          <a href="#appointment-section" className="primary-btn btn-normal appoinment-btn">appointment</a>
+                          <a href="#appointment-section" className="primary-btn btn-normal appoinment-btn">{t('appointment_title', 'Appointment')}</a>
                       </div>
                   </div>
               </div>
               <div className="row">
-                  <div className="ts-slider owl-carousel">
+                  <div className="ts-slider owl-carousel" key={`trainers-${language}`}>
                       {trainers.length > 0 ? (
                           trainers.map((trainer) => (
                               <div className="col-lg-4" key={trainer.id}>
@@ -365,7 +397,7 @@ const Index = () => {
               </div>
           </div>
       </section>
-      {/*  Team Section End  */}
+      {/* Team Section End */}
     </>
   );
 };

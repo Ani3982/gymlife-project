@@ -84,7 +84,9 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUsername');
-    navigate('/admin/login');
+    localStorage.removeItem('gymlife_token');
+    localStorage.removeItem('gymlife_user');
+    navigate('/');
   };
 
   // General Delete handler
@@ -264,7 +266,29 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div style={{ padding: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+        <div style={{ padding: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <button onClick={() => navigate('/')} style={{
+            width: '100%',
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            color: '#ffffff',
+            padding: '10px',
+            borderRadius: '4px',
+            textTransform: 'uppercase',
+            fontWeight: 'bold',
+            fontSize: '12px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: 'all 0.2s'
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
+          >
+            <i className="fa fa-home"></i> View Website
+          </button>
           <button onClick={handleLogout} style={{
             width: '100%',
             background: 'transparent',
@@ -274,13 +298,18 @@ const AdminDashboard = () => {
             borderRadius: '4px',
             textTransform: 'uppercase',
             fontWeight: 'bold',
+            fontSize: '12px',
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
             transition: 'all 0.2s'
           }}
-          onMouseOver={(e) => { e.target.style.background = '#f36100'; e.target.style.color = '#ffffff'; }}
-          onMouseOut={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#f36100'; }}
+          onMouseOver={(e) => { e.currentTarget.style.background = '#f36100'; e.currentTarget.style.color = '#ffffff'; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#f36100'; }}
           >
-            Logout
+            <i className="fa fa-sign-out"></i> Log Out to Home
           </button>
         </div>
       </div>

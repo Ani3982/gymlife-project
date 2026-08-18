@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const BmiCalculator = () => {
+  const { t } = useLanguage();
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [age, setAge] = useState('');
-  const [sex, setSex] = useState('');
+  const [sex, setSex] = useState('Male');
   const [bmi, setBmi] = useState(null);
   const [status, setStatus] = useState('');
 
@@ -33,13 +35,13 @@ const BmiCalculator = () => {
       
       let statusVal = '';
       if (bmiVal < 18.5) {
-        statusVal = 'Underweight';
+        statusVal = t('underweight', 'Underweight');
       } else if (bmiVal >= 18.5 && bmiVal < 25) {
-        statusVal = 'Healthy';
+        statusVal = t('normal_weight', 'Normal / Healthy Weight');
       } else if (bmiVal >= 25 && bmiVal < 30) {
-        statusVal = 'Overweight';
+        statusVal = t('overweight', 'Overweight');
       } else {
-        statusVal = 'Obese';
+        statusVal = t('obese', 'Obese');
       }
       setStatus(statusVal);
     }
@@ -47,58 +49,57 @@ const BmiCalculator = () => {
 
   return (
     <>
-      {/*  Breadcrumb Section Begin  */}
+      {/* Breadcrumb Section Begin */}
       <section className="breadcrumb-section set-bg" data-setbg="/img/breadcrumb-bg.jpg" style={{ backgroundImage: "url('/img/breadcrumb-bg.jpg')" }}>
           <div className="container">
               <div className="row">
                   <div className="col-lg-12 text-center">
                       <div className="breadcrumb-text">
-                          <h2>BMI calculator</h2>
+                          <h2>{t('bmi_calculator', 'BMI Calculator')}</h2>
                           <div className="bt-option">
-                              <Link to="/">Home</Link>
-                              <a href="#">Pages</a>
-                              <span>BMI calculator</span>
+                              <Link to="/">{t('home', 'Home')}</Link>
+                              <span>{t('bmi_calculator', 'BMI Calculator')}</span>
                           </div>
                       </div>
                   </div>
               </div>
           </div>
       </section>
-      {/*  Breadcrumb Section End  */}
+      {/* Breadcrumb Section End */}
 
-      {/*  BMI Calculator Section Begin  */}
+      {/* BMI Calculator Section Begin */}
       <section className="bmi-calculator-section spad">
           <div className="container">
               <div className="row">
                   <div className="col-lg-6">
                       <div className="section-title chart-title">
-                          <span>check your body</span>
-                          <h2>BMI CALCULATOR CHART</h2>
+                          <span>{t('bmi_sub', 'CHECK YOUR HEALTH SCORE')}</span>
+                          <h2>{t('bmi_title', 'BMI CALCULATOR CHART')}</h2>
                       </div>
                       <div className="chart-table">
                           <table>
                               <thead>
                                   <tr>
-                                      <th>Bmi</th>
-                                      <th>WEIGHT STATUS</th>
+                                      <th>BMI</th>
+                                      <th>{t('weight', 'Weight Status')}</th>
                                   </tr>
                               </thead>
                               <tbody>
                                   <tr>
                                       <td className="point">Below 18.5</td>
-                                      <td>Underweight</td>
+                                      <td>{t('underweight', 'Underweight')}</td>
                                   </tr>
                                   <tr>
                                       <td className="point">18.5 - 24.9</td>
-                                      <td>Healthy</td>
+                                      <td>{t('normal_weight', 'Normal Weight')}</td>
                                   </tr>
                                   <tr>
                                       <td className="point">25.0 - 29.9</td>
-                                      <td>Overweight</td>
+                                      <td>{t('overweight', 'Overweight')}</td>
                                   </tr>
                                   <tr>
-                                      <td className="point">30.0 - and Above</td>
-                                      <td>Obese</td>
+                                      <td className="point">30.0 and Above</td>
+                                      <td>{t('obese', 'Obese')}</td>
                                   </tr>
                               </tbody>
                           </table>
@@ -106,74 +107,66 @@ const BmiCalculator = () => {
                   </div>
                   <div className="col-lg-6">
                       <div className="section-title chart-calculate-title">
-                          <span>check your body</span>
-                          <h2>CALCULATE YOUR BMI</h2>
+                          <span>{t('bmi_sub', 'CHECK YOUR HEALTH SCORE')}</span>
+                          <h2>{t('bmi_title', 'CALCULATE YOUR BMI')}</h2>
                       </div>
                       <div className="chart-calculate-form">
-                          <p>Easily calculate your Body Mass Index (BMI) to determine your weight category and understand your body's fitness status.</p>
+                          <p>{t('bmi_desc', 'Easily calculate your Body Mass Index to understand your fitness level and ideal target weight.')}</p>
                           <form onSubmit={handleCalculate}>
                               <div className="row">
-                                  <div className="col-sm-6 mb-3">
+                                  <div className="col-sm-6">
                                       <input 
                                           type="number" 
-                                          placeholder="Height / cm" 
-                                          value={height} 
-                                          onChange={(e) => setHeight(e.target.value)} 
+                                          placeholder={t('height', 'Height / cm')} 
+                                          value={height}
+                                          onChange={(e) => setHeight(e.target.value)}
                                           required 
-                                          min="50" 
-                                          max="300" 
                                       />
                                   </div>
-                                  <div className="col-sm-6 mb-3">
+                                  <div className="col-sm-6">
                                       <input 
                                           type="number" 
-                                          placeholder="Weight / kg" 
-                                          value={weight} 
-                                          onChange={(e) => setWeight(e.target.value)} 
+                                          placeholder={t('weight', 'Weight / kg')} 
+                                          value={weight}
+                                          onChange={(e) => setWeight(e.target.value)}
                                           required 
-                                          min="10" 
-                                          max="500" 
                                       />
                                   </div>
-                                  <div className="col-sm-6 mb-3">
+                                  <div className="col-sm-6">
                                       <input 
                                           type="number" 
-                                          placeholder="Age" 
-                                          value={age} 
-                                          onChange={(e) => setAge(e.target.value)} 
+                                          placeholder={t('age', 'Age')} 
+                                          value={age}
+                                          onChange={(e) => setAge(e.target.value)}
                                       />
                                   </div>
-                                  <div className="col-sm-6 mb-3">
-                                      <input 
-                                          type="text" 
-                                          placeholder="Sex" 
+                                  <div className="col-sm-6">
+                                      <select 
                                           value={sex} 
-                                          onChange={(e) => setSex(e.target.value)} 
-                                      />
+                                          onChange={(e) => setSex(e.target.value)}
+                                          style={{ width: '100%', height: '50px', background: 'transparent', border: '1px solid #363636', color: '#a9a9a9', padding: '0 20px', marginBottom: '20px' }}
+                                      >
+                                          <option value="Male" style={{ background: '#151515' }}>{t('male', 'Male')}</option>
+                                          <option value="Female" style={{ background: '#151515' }}>{t('female', 'Female')}</option>
+                                      </select>
                                   </div>
                                   <div className="col-lg-12">
-                                      <button type="submit" style={{ cursor: 'pointer' }}>Calculate</button>
+                                      <button type="submit">{t('calculate', 'Calculate Now')}</button>
                                   </div>
-                                  {bmi && (
-                                      <div className="col-lg-12 mt-4 text-left text-white" style={{
-                                          background: 'rgba(255, 255, 255, 0.05)',
-                                          padding: '15px 20px',
-                                          borderRadius: '5px',
-                                          borderLeft: '4px solid #f36100',
-                                          boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
-                                      }}>
-                                          <h5 style={{ margin: 0, fontSize: '18px' }}>Your BMI is <strong style={{ color: '#f36100' }}>{bmi}</strong> (<span style={{ color: '#f36100', fontWeight: 'bold' }}>{status}</span>)</h5>
-                                      </div>
-                                  )}
                               </div>
                           </form>
+                          {bmi && (
+                              <div style={{ marginTop: '20px', padding: '20px', background: '#151515', border: '1px solid #f36100', borderRadius: '6px', textAlign: 'center' }}>
+                                  <h4 style={{ color: '#fff', marginBottom: '10px' }}>{t('bmi_result', 'Your BMI Result')}: <span style={{ color: '#f36100', fontWeight: 'bold' }}>{bmi}</span></h4>
+                                  <p style={{ color: '#c4c4c4', margin: 0 }}>Category: <strong style={{ color: '#fff' }}>{status}</strong></p>
+                              </div>
+                          )}
                       </div>
                   </div>
               </div>
           </div>
       </section>
-      {/*  BMI Calculator Section End  */}
-
+      {/* BMI Calculator Section End */}
     </>
   );
 };

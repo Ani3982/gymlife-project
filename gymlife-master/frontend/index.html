@@ -1,5 +1,5 @@
-<!doctype html>
-<html lang="zxx">
+﻿<!doctype html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content="GymLife - High-end professional training facilities, certified trainers, and custom workout plans.">
@@ -10,6 +10,7 @@
     <title>GymLife | Professional Fitness Center & Gym</title>
 
     <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Muli:300,400,500,600,700,800,900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Oswald:300,400,500,600,700&display=swap" rel="stylesheet">
 
@@ -24,6 +25,9 @@
     <link rel="stylesheet" href="/css/style.css" type="text/css">
   </head>
   <body>
+    <!-- Hidden Google Translate Element Anchor -->
+    <div id="google_translate_element" style="display:none;"></div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 
@@ -35,6 +39,19 @@
     <script src="/js/jquery.barfiller.js"></script>
     <script src="/js/jquery.slicknav.js"></script>
     <script src="/js/owl.carousel.min.js"></script>
-    <!-- <script src="/js/main.js"></script> -->
+
+    <!-- Google Translate Script -->
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        if (window.google && window.google.translate) {
+          new google.translate.TranslateElement({
+            pageLanguage: 'en',
+            includedLanguages: 'en,mr,hi',
+            autoDisplay: false
+          }, 'google_translate_element');
+        }
+      }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   </body>
 </html>

@@ -31,6 +31,12 @@ urlpatterns = [
     path('api/contact-info/', views.get_contact_info, name='get_contact_info'),
     path('api/contact/', views.create_contact_message, name='create_contact_message'),
 
+    # User Auth & Member APIs
+    path('api/auth/register/', views.auth_register, name='auth_register'),
+    path('api/auth/login/', views.auth_login, name='auth_login'),
+    path('api/auth/me/', views.auth_me, name='auth_me'),
+    path('api/member/dashboard/', views.member_dashboard_data, name='member_dashboard_data'),
+
     # Admin API endpoints
     path('api/admin/login/', views.admin_login, name='admin_login'),
     
