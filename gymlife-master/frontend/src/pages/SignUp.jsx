@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -32,7 +32,7 @@ const SignUp = () => {
     setLoading(true);
     try {
       const res = await register(form);
-      showSuccess(`Welcome to GymLife, ${res.user?.name || res.user?.username}! 🏋️`);
+      showSuccess(`Welcome to GymLife, ${res.user?.name || res.user?.username}!`);
       navigate('/dashboard');
     } catch (err) {
       setErrorMsg(err.message || 'Registration failed');
@@ -47,16 +47,15 @@ const SignUp = () => {
       <div className="auth-page-container">
         <div className="container">
           <div className="row justify-content-center">
-            <div className="col-lg-6 col-md-9">
+            <div className="col-lg-5 col-md-8 col-sm-10">
               <div className="auth-card-wrapper">
                 <div className="auth-card-header">
                   <div className="auth-brand-badge">
-                    <span className="badge-dot"></span> BECOME A MEMBER
+                    <span className="badge-dot"></span> NEW MEMBERSHIP
                   </div>
-                  <h2>Create Your GymLife Account</h2>
-                  <p>Join our elite fitness community and start reaching your goals today.</p>
+                  <h2>Create Your Account</h2>
+                  <p>Join GymLife today and transform your physique with elite coaching and world-class equipment.</p>
 
-                  {/* Clean Continue with Google */}
                   <button 
                     type="button" 
                     className="btn-google-auth" 
@@ -69,11 +68,11 @@ const SignUp = () => {
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                     </svg>
-                    <span>Sign Up with Google</span>
+                    <span>Sign up with Google</span>
                   </button>
 
                   <div className="auth-divider">
-                    <span>or register with email</span>
+                    <span>or enter your details</span>
                   </div>
                 </div>
 
@@ -91,21 +90,20 @@ const SignUp = () => {
                         <i className="fa fa-id-card input-icon"></i>
                         <input
                           type="text"
-                          placeholder="John Doe"
+                          placeholder="e.g. Jordan Lee"
                           value={form.name}
                           onChange={(e) => setForm({ ...form, name: e.target.value })}
                           required
                         />
                       </div>
                     </div>
-
                     <div className="auth-field-group">
                       <label>Username</label>
                       <div className="auth-input-wrap">
                         <i className="fa fa-at input-icon"></i>
                         <input
                           type="text"
-                          placeholder="johndoe"
+                          placeholder="username"
                           value={form.username}
                           onChange={(e) => setForm({ ...form, username: e.target.value })}
                           required
@@ -120,7 +118,7 @@ const SignUp = () => {
                       <i className="fa fa-envelope input-icon"></i>
                       <input
                         type="email"
-                        placeholder="john@example.com"
+                        placeholder="name@example.com"
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         required
@@ -134,7 +132,7 @@ const SignUp = () => {
                       <i className="fa fa-lock input-icon"></i>
                       <input
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="At least 6 characters"
+                        placeholder="Create strong password"
                         value={form.password}
                         onChange={(e) => setForm({ ...form, password: e.target.value })}
                         required
@@ -144,6 +142,7 @@ const SignUp = () => {
                         type="button"
                         className="password-toggle-btn"
                         onClick={() => setShowPassword(!showPassword)}
+                        aria-label="Toggle password"
                       >
                         <i className={`fa ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                       </button>
@@ -151,7 +150,7 @@ const SignUp = () => {
                   </div>
 
                   <div className="auth-field-group">
-                    <label>Selected Membership Tier</label>
+                    <label>Select Membership Plan</label>
                     <div className="auth-input-wrap select-wrap">
                       <i className="fa fa-trophy input-icon"></i>
                       <select
@@ -172,7 +171,7 @@ const SignUp = () => {
                       </>
                     ) : (
                       <>
-                        <span>Complete Registration</span>
+                        <span>Join GymLife Now</span>
                         <i className="fa fa-arrow-right"></i>
                       </>
                     )}
@@ -183,7 +182,7 @@ const SignUp = () => {
                   <p>
                     Already have an account?{' '}
                     <Link to="/login" className="highlight-link">
-                      Sign In
+                      Sign In here
                     </Link>
                   </p>
                 </div>

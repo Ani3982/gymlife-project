@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 import GoogleAccountModal from './GoogleAccountModal';
 
-const AuthModal = () => {
-  const { isAuthModalOpen, closeAuthModal, authModalTab, setAuthModalTab, login, register } = useAuth();
+export const AuthModal = () => {
+  const { isAuthModalOpen, authModalTab, closeAuthModal, setAuthModalTab, login, register } = useAuth();
   const { showSuccess, showError } = useToast();
+  const { t } = useLanguage();
 
-  const [loginForm, setLoginForm] = useState({
-    username: '',
-    password: '',
-  });
-
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [registerForm, setRegisterForm] = useState({
     name: '',
     username: '',
@@ -19,7 +17,6 @@ const AuthModal = () => {
     password: '',
     plan: '12 Month VIP Membership',
   });
-
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -33,9 +30,10 @@ const AuthModal = () => {
     setLoading(true);
     try {
       const res = await login(loginForm);
-      showSuccess(`Welcome back, ${res.user?.name || res.user?.username}! 🔥`);
+      showSuccess(`Welcome back, ${res.user?.name || res.user?.username}!`);
+      closeAuthModal();
     } catch (err) {
-      setErrorMsg(err.message || 'Invalid username or password');
+      setErrorMsg(err.message || 'Invalid username or password. Please try again.');
       showError(err.message || 'Login failed');
     } finally {
       setLoading(false);
@@ -48,28 +46,11 @@ const AuthModal = () => {
     setLoading(true);
     try {
       const res = await register(registerForm);
-      showSuccess(`Account created! Welcome to GymLife, ${res.user?.name || res.user?.username}! 🏋️`);
+      showSuccess(`Welcome to GymLife, ${res.user?.name || res.user?.username}! Membership active.`);
+      closeAuthModal();
     } catch (err) {
-      setErrorMsg(err.message || 'Registration failed');
+      setErrorMsg(err.message || 'Registration failed. Please check your information.');
       showError(err.message || 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickDemoLogin = async (role) => {
-    setErrorMsg('');
-    setLoading(true);
-    try {
-      if (role === 'member') {
-        const res = await login({ username: 'demo_member', password: 'demo123' });
-        showSuccess(`Signed in as Demo Member (${res.user.name})! 🏋️`);
-      } else {
-        const res = await login({ username: 'admin', password: 'admin123' });
-        showSuccess('Signed in as Administrator! 👑');
-      }
-    } catch (err) {
-      setErrorMsg(err.message || 'Quick login failed');
     } finally {
       setLoading(false);
     }
@@ -78,51 +59,43 @@ const AuthModal = () => {
   return (
     <>
       <div className="auth-modal-overlay" onClick={closeAuthModal}>
-        <div className="auth-modal-dialog" onClick={(e) => e.stopPropagation()}>
-          <button className="auth-modal-close" onClick={closeAuthModal} aria-label="Close modal">
+        <div className="auth-modal-content" onClick={(e) => e.stopPropagation()}>
+          <button className="auth-close-btn" onClick={closeAuthModal} aria-label="Close modal">
             <i className="fa fa-times"></i>
           </button>
 
           {/* Modal Header */}
           <div className="auth-modal-header">
             <div className="auth-brand-badge">
-              <span className="badge-dot"></span> GYMLIFE CLUB ACCESS
+              <span className="badge-dot"></span> SECURE MEMBER ACCESS
             </div>
-            <h3 className="auth-title">
-              {authModalTab === 'login' ? 'Welcome Back, Athlete' : 'Start Your Transformation'}
-            </h3>
+            <h2>{authModalTab === 'login' ? 'Sign In to GymLife' : 'Create Free Account'}</h2>
             <p className="auth-subtitle">
-              {authModalTab === 'login'
-                ? 'Access your workout timetable, appointments & member benefits'
+              {authModalTab === 'login' 
+                ? 'Access your workouts, trainer schedules, and membership dashboard' 
                 : 'Join GymLife today & claim your complimentary fitness consultation'}
             </p>
-
-            {/* Tab Switcher */}
-            <div className="auth-tab-pill-container">
-              <button
-                type="button"
-                className={`auth-tab-btn ${authModalTab === 'login' ? 'active' : ''}`}
-                onClick={() => {
-                  setAuthModalTab('login');
-                  setErrorMsg('');
-                }}
-              >
-                <i className="fa fa-sign-in"></i> Sign In
-              </button>
-              <button
-                type="button"
-                className={`auth-tab-btn ${authModalTab === 'register' ? 'active' : ''}`}
-                onClick={() => {
-                  setAuthModalTab('register');
-                  setErrorMsg('');
-                }}
-              >
-                <i className="fa fa-user-plus"></i> Create Account
-              </button>
-            </div>
           </div>
 
-          {/* Clean Continue with Google Button */}
+          {/* Tab Switcher */}
+          <div className="auth-tab-pill-container">
+            <button
+              type="button"
+              className={`auth-tab-btn ${authModalTab === 'login' ? 'active' : ''}`}
+              onClick={() => { setAuthModalTab('login'); setErrorMsg(''); }}
+            >
+              <i className="fa fa-sign-in"></i> Sign In
+            </button>
+            <button
+              type="button"
+              className={`auth-tab-btn ${authModalTab === 'register' ? 'active' : ''}`}
+              onClick={() => { setAuthModalTab('register'); setErrorMsg(''); }}
+            >
+              <i className="fa fa-user-plus"></i> Create Account
+            </button>
+          </div>
+
+          {/* Clean Google Authentication Button */}
           <button 
             type="button" 
             className="btn-google-auth" 
@@ -138,39 +111,8 @@ const AuthModal = () => {
             <span>Continue with Google</span>
           </button>
 
-          {/* Quick Demo Logins */}
-          <div className="quick-demo-section mt-2">
-            <div className="quick-demo-title">⚡ 1-Click Instant Demo Access</div>
-            <div className="quick-demo-buttons">
-              <button
-                type="button"
-                className="demo-pill-btn member"
-                onClick={() => handleQuickDemoLogin('member')}
-                disabled={loading}
-              >
-                <span className="demo-icon">🏋️</span>
-                <span className="demo-text">
-                  <strong>Member Demo</strong>
-                  <small>Alex Rivers</small>
-                </span>
-              </button>
-              <button
-                type="button"
-                className="demo-pill-btn admin"
-                onClick={() => handleQuickDemoLogin('admin')}
-                disabled={loading}
-              >
-                <span className="demo-icon">👑</span>
-                <span className="demo-text">
-                  <strong>Admin Demo</strong>
-                  <small>Full Portal Access</small>
-                </span>
-              </button>
-            </div>
-          </div>
-
           <div className="auth-divider">
-            <span>or continue with credentials</span>
+            <span>or enter credentials</span>
           </div>
 
           {errorMsg && (
@@ -188,7 +130,7 @@ const AuthModal = () => {
                   <i className="fa fa-user input-icon"></i>
                   <input
                     type="text"
-                    placeholder="Enter your username or email"
+                    placeholder="e.g. your_username or email"
                     value={loginForm.username}
                     onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                     required
@@ -199,8 +141,8 @@ const AuthModal = () => {
               <div className="auth-field-group">
                 <div className="field-label-row">
                   <label>Password</label>
-                  <a href="#forgot" onClick={(e) => { e.preventDefault(); alert('Please use 1-click demo buttons or Google sign-in.'); }} className="forgot-link">
-                    Forgot?
+                  <a href="#forgot" onClick={(e) => { e.preventDefault(); alert('Please use Google sign-in or enter your registered account credentials.'); }} className="forgot-link">
+                    Forgot Password?
                   </a>
                 </div>
                 <div className="auth-input-wrap">
@@ -216,6 +158,7 @@ const AuthModal = () => {
                     type="button"
                     className="password-toggle-btn"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label="Toggle password visibility"
                   >
                     <i className={`fa ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
@@ -297,6 +240,7 @@ const AuthModal = () => {
                     type="button"
                     className="password-toggle-btn"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label="Toggle password visibility"
                   >
                     <i className={`fa ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
@@ -304,7 +248,7 @@ const AuthModal = () => {
               </div>
 
               <div className="auth-field-group">
-                <label>Select Preferred Membership Plan</label>
+                <label>Select Membership Plan</label>
                 <div className="auth-input-wrap select-wrap">
                   <i className="fa fa-trophy input-icon"></i>
                   <select
@@ -334,7 +278,7 @@ const AuthModal = () => {
           )}
 
           <div className="auth-modal-footer">
-            <span>🔒 Secured by Google Auth & 256-Bit SSL Encryption</span>
+            <span><i className="fa fa-shield" style={{ color: '#f36100', marginRight: '5px' }}></i> Secured by 256-Bit SSL Encryption • Instant Cloud Access</span>
           </div>
         </div>
       </div>

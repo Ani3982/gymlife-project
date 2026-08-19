@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -32,28 +32,8 @@ const Login = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Invalid credentials');
+      setErrorMsg(err.message || 'Invalid username or password');
       showError(err.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDemo = async (role) => {
-    setErrorMsg('');
-    setLoading(true);
-    try {
-      if (role === 'member') {
-        const res = await login({ username: 'demo_member', password: 'demo123' });
-        showSuccess(`Welcome, ${res.user?.name}!`);
-        navigate('/dashboard');
-      } else {
-        const res = await login({ username: 'admin', password: 'admin123' });
-        showSuccess('Welcome Administrator!');
-        navigate('/admin/dashboard');
-      }
-    } catch (err) {
-      setErrorMsg(err.message || 'Demo login failed');
     } finally {
       setLoading(false);
     }
@@ -64,7 +44,7 @@ const Login = () => {
       <div className="auth-page-container">
         <div className="container">
           <div className="row justify-content-center">
-            <div className="col-lg-6 col-md-9">
+            <div className="col-lg-5 col-md-8 col-sm-10">
               <div className="auth-card-wrapper">
                 <div className="auth-card-header">
                   <div className="auth-brand-badge">
@@ -89,37 +69,6 @@ const Login = () => {
                     <span>Continue with Google</span>
                   </button>
 
-                  {/* 1-Click Fast Logins */}
-                  <div className="quick-demo-section mt-3">
-                    <div className="quick-demo-title">⚡ 1-Click Instant Demo Login</div>
-                    <div className="quick-demo-buttons">
-                      <button
-                        type="button"
-                        className="demo-pill-btn member"
-                        onClick={() => handleDemo('member')}
-                        disabled={loading}
-                      >
-                        <span className="demo-icon">🏋️</span>
-                        <span className="demo-text">
-                          <strong>Member Demo</strong>
-                          <small>Alex Rivers</small>
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        className="demo-pill-btn admin"
-                        onClick={() => handleDemo('admin')}
-                        disabled={loading}
-                      >
-                        <span className="demo-icon">👑</span>
-                        <span className="demo-text">
-                          <strong>Admin Demo</strong>
-                          <small>Staff Portal</small>
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-
                   <div className="auth-divider">
                     <span>or enter credentials</span>
                   </div>
@@ -138,7 +87,7 @@ const Login = () => {
                       <i className="fa fa-user input-icon"></i>
                       <input
                         type="text"
-                        placeholder="Username or email"
+                        placeholder="Enter username or email"
                         value={form.username}
                         onChange={(e) => setForm({ ...form, username: e.target.value })}
                         required
@@ -149,7 +98,7 @@ const Login = () => {
                   <div className="auth-field-group">
                     <div className="field-label-row">
                       <label>Password</label>
-                      <a href="#reset" onClick={(e) => { e.preventDefault(); alert('Please use demo login or Google sign-in.'); }} className="forgot-link">
+                      <a href="#reset" onClick={(e) => { e.preventDefault(); alert('Please use Google sign-in or enter your registered account credentials.'); }} className="forgot-link">
                         Forgot?
                       </a>
                     </div>
@@ -157,7 +106,7 @@ const Login = () => {
                       <i className="fa fa-lock input-icon"></i>
                       <input
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Password"
+                        placeholder="Enter password"
                         value={form.password}
                         onChange={(e) => setForm({ ...form, password: e.target.value })}
                         required
@@ -166,6 +115,7 @@ const Login = () => {
                         type="button"
                         className="password-toggle-btn"
                         onClick={() => setShowPassword(!showPassword)}
+                        aria-label="Toggle password"
                       >
                         <i className={`fa ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                       </button>
@@ -190,7 +140,7 @@ const Login = () => {
                   <p>
                     Don't have an account yet?{' '}
                     <Link to="/signup" className="highlight-link">
-                      Sign Up / Join Now
+                      Create Free Account
                     </Link>
                   </p>
                 </div>
