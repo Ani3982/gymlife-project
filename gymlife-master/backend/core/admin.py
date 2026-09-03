@@ -1,8 +1,15 @@
 from django.contrib import admin
 from .models import (
-    Appointment, Service, Trainer, ClassItem,
+    Booking, Appointment, Service, Trainer, ClassItem,
     GalleryItem, BlogPost, PricingPlan, ContactInfo, ContactMessage
 )
+
+@admin.register(Booking)
+class BookingAdmin(admin.ModelAdmin):
+    list_display = ('ref_id', 'name', 'service', 'scheduled_time', 'phone', 'status', 'email_delivered', 'sms_delivered', 'created_at')
+    search_fields = ('ref_id', 'name', 'email', 'phone', 'service', 'location')
+    list_filter = ('status', 'service', 'scheduled_time', 'email_delivered', 'sms_delivered')
+    readonly_fields = ('ref_id', 'created_at', 'updated_at')
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
@@ -10,6 +17,7 @@ class AppointmentAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'phone', 'service')
     list_filter = ('service', 'appointment_date')
     readonly_fields = ('created_at',)
+
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):

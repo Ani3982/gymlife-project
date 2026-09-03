@@ -4,6 +4,14 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (
     : ''
 );
 
+const getAdminHeaders = () => {
+  const token = localStorage.getItem('adminToken') || localStorage.getItem('gymlife_token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : ''
+  };
+};
+
 const handleResponse = async (response) => {
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
@@ -70,18 +78,18 @@ const DEFAULT_GALLERY = [
 ];
 
 const DEFAULT_CLASSES = [
-  { id: 1, name: 'WEIGHT LIFTING', category: 'STRENGTH', duration: '60 mins', image_url: '/img/classes/class-1.jpg' },
-  { id: 2, name: 'INDOOR CYCLING', category: 'CARDIO', duration: '45 mins', image_url: '/img/classes/class-2.jpg' },
-  { id: 3, name: 'KETTLEBELL POWER', category: 'STRENGTH', duration: '50 mins', image_url: '/img/classes/class-3.jpg' },
-  { id: 4, name: 'INDOOR CYCLING', category: 'CARDIO', duration: '45 mins', image_url: '/img/classes/class-4.jpg' },
-  { id: 5, name: 'BOXING', category: 'TRAINING', duration: '60 mins', image_url: '/img/classes/class-5.jpg' },
+  { id: 1, name: 'WEIGHT LIFTING', category: 'STRENGTH', duration: '60 mins', image_url: '/img/classes/class-1.jpg', trainer_name: 'John Smith' },
+  { id: 2, name: 'INDOOR CYCLING', category: 'CARDIO', duration: '45 mins', image_url: '/img/classes/class-2.jpg', trainer_name: 'Mike Davis' },
+  { id: 3, name: 'KETTLEBELL POWER', category: 'STRENGTH', duration: '50 mins', image_url: '/img/classes/class-3.jpg', trainer_name: 'Emma Wilson' },
+  { id: 4, name: 'YOGA & MEDITATION', category: 'YOGA', duration: '45 mins', image_url: '/img/classes/class-4.jpg', trainer_name: 'Sarah Johnson' },
+  { id: 5, name: 'BOXING & CORE', category: 'BOXING', duration: '60 mins', image_url: '/img/classes/class-5.jpg', trainer_name: 'Emma Wilson' },
 ];
 
 const DEFAULT_TRAINERS = [
-  { id: 1, name: 'Patrick Maguire', role: 'Athletic Trainer', image_url: '/img/team/team-1.jpg' },
-  { id: 2, name: 'CEntry Jordan', role: 'Athletic Trainer', image_url: '/img/team/team-2.jpg' },
-  { id: 3, name: 'Matt LeBlanc', role: 'Athletic Trainer', image_url: '/img/team/team-3.jpg' },
-  { id: 4, name: 'Rachel Green', role: 'Athletic Trainer', image_url: '/img/team/team-4.jpg' },
+  { id: 1, name: 'John Smith', role: 'Head Strength Coach', image_url: '/img/team/team-1.jpg', experience_years: 8 },
+  { id: 2, name: 'Sarah Johnson', role: 'Yoga & Mobility Coach', image_url: '/img/team/team-2.jpg', experience_years: 6 },
+  { id: 3, name: 'Mike Davis', role: 'Cardio & HIIT Coach', image_url: '/img/team/team-3.jpg', experience_years: 5 },
+  { id: 4, name: 'Emma Wilson', role: 'CrossFit & Boxing Coach', image_url: '/img/team/team-4.jpg', experience_years: 7 },
 ];
 
 const DEFAULT_SERVICES = [
@@ -104,7 +112,9 @@ const parsePlanFeatures = (plan) => {
 };
 
 export const api = {
-  // Public endpoints
+  // -------------------------------------------------------------
+  // Public Endpoints
+  // -------------------------------------------------------------
   getClasses: async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/classes/`);
@@ -126,6 +136,17 @@ export const api = {
     } catch (err) {
       console.error('Error fetching class detail:', err);
       return DEFAULT_CLASSES.find(c => c.id === Number(id)) || DEFAULT_CLASSES[0];
+    }
+  },
+
+  getTimetable: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/timetable/`);
+      const data = await handleResponse(res);
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.error('Error fetching timetable:', err);
+      return [];
     }
   },
 
@@ -169,8 +190,7 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/api/blogs/`);
       const data = await handleResponse(res);
-      if (Array.isArray(data) && data.length > 0) return data;
-      return [];
+      return Array.isArray(data) ? data : [];
     } catch (err) {
       console.error('Error fetching blogs:', err);
       return [];
@@ -212,10 +232,33 @@ export const api = {
     }
   },
 
-  // POST endpoints
+  createBooking: async (data) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/bookings/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return await handleResponse(res);
+    } catch (err) {
+      console.error('Error creating booking:', err);
+      throw err;
+    }
+  },
+
+  getBookingDetail: async (refId) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/bookings/${refId}/`);
+      return await handleResponse(res);
+    } catch (err) {
+      console.error('Error fetching booking detail:', err);
+      throw err;
+    }
+  },
+
   createAppointment: async (data) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/appointments/`, {
+      const res = await fetch(`${API_BASE_URL}/api/bookings/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -226,6 +269,7 @@ export const api = {
       throw err;
     }
   },
+
 
   createContactMessage: async (data) => {
     try {
@@ -241,69 +285,25 @@ export const api = {
     }
   },
 
-  // Member and General Authentication
+  // -------------------------------------------------------------
+  // Member Authentication
+  // -------------------------------------------------------------
   authRegister: async (userData) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/register/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-      return await handleResponse(res);
-    } catch (err) {
-      console.error('Error in authRegister:', err);
-      throw err;
-    }
+    const res = await fetch(`${API_BASE_URL}/api/auth/register/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+    return await handleResponse(res);
   },
 
   authLogin: async (credentials) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-      return await handleResponse(res);
-    } catch (err) {
-      console.error('Error in authLogin:', err);
-      // Fallback for demo users if network error
-      if (credentials.username === 'demo_member' || credentials.username === 'member@gymlife.com') {
-        return {
-          status: 'success',
-          token: 'gymlife-member-token-demo',
-          user: {
-            id: 99,
-            username: 'demo_member',
-            email: 'member@gymlife.com',
-            name: 'Alex Rivers',
-            role: 'member',
-            plan: '12 Month Membership',
-            joined_date: 'August 2026'
-          }
-        };
-      }
-      if (credentials.username === 'admin' && credentials.password === 'admin123') {
-        return {
-          status: 'success',
-          token: 'dummy-admin-token-for-gymlife-site',
-          user: {
-            id: 1,
-            username: 'admin',
-            email: 'admin@gymlife.com',
-            name: 'GymLife Admin',
-            role: 'admin',
-            is_staff: true,
-            is_superuser: true,
-            plan: 'Master Admin Access',
-            joined_date: 'July 2026'
-          }
-        };
-      }
-      throw err;
-    }
+    const res = await fetch(`${API_BASE_URL}/api/auth/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+    return await handleResponse(res);
   },
 
   getAuthMe: async (token) => {
@@ -327,73 +327,455 @@ export const api = {
       return await handleResponse(res);
     } catch (err) {
       console.error('Error in getMemberDashboard:', err);
-      return {
-        status: 'success',
-        stats: {
-          attendance_this_month: 14,
-          calories_burned_approx: '9,450 kcal',
-          current_streak_days: 5,
-          membership_status: 'Active (VIP Gold)',
-          next_renewal: 'August 2027',
-          locker_assigned: 'Locker #42',
-          trainer_assigned: 'Sarah Johnson & John Smith'
-        },
-        appointments: [
-          {
-            id: 101,
-            service: 'Personal Fitness Assessment & Body Scan',
-            appointment_date: 'Tomorrow at 10:00 AM',
-            notes: 'Meet with Senior Strength Coach John Smith',
-            status: 'Confirmed',
-            created_at: '2026-08-18'
-          },
-          {
-            id: 102,
-            service: 'High-Intensity Cardio & Weight Loss Circuit',
-            appointment_date: 'Friday at 06:30 PM',
-            notes: 'Group Studio B - Bring water bottle & towel',
-            status: 'Upcoming',
-            created_at: '2026-08-18'
-          }
-        ],
-        available_classes: []
-      };
+      return null;
     }
   },
 
-  // Admin endpoints
+  // -------------------------------------------------------------
+  // Admin Authentication & Core APIs
+  // -------------------------------------------------------------
   adminLogin: async (credentials) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/login/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-      if (credentials.username === 'admin' && credentials.password === 'admin123') {
-        return {
-          status: 'success',
-          token: 'dummy-admin-token-for-gymlife-site',
-          username: 'admin',
-          message: 'Login successful'
-        };
-      }
-      return await handleResponse(res);
-    } catch (err) {
-      console.error('Error admin login:', err);
-      if (credentials.username === 'admin' && credentials.password === 'admin123') {
-        return {
-          status: 'success',
-          token: 'dummy-admin-token-for-gymlife-site',
-          username: 'admin',
-          message: 'Login successful'
-        };
-      }
-      throw err;
-    }
+    const res = await fetch(`${API_BASE_URL}/api/admin/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+    return await handleResponse(res);
   },
+
+  adminGetDashboard: async () => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/dashboard/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Bookings & Appointments Management
+  adminGetBookings: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/api/admin/bookings/?${query}`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminGetBooking: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/bookings/${id}/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminCreateBooking: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/bookings/`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdateBooking: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/bookings/${id}/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminDeleteBooking: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/bookings/${id}/`, {
+      method: 'DELETE',
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Notification Management APIs
+  adminGetNotificationLogs: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/api/admin/notification-logs/?${query}`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminGetNotificationLog: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/notification-logs/${id}/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminResendNotification: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/notification-logs/${id}/resend/`, {
+      method: 'POST',
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminGetNotificationStats: async () => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/notification-logs/stats/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminRunNotificationDiagnostic: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/notification-logs/diagnostic/`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+
+  // Members Management
+  adminGetMembers: async (params = {}) => {
+
+
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/api/admin/members/?${query}`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminGetMember: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/members/${id}/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminCreateMember: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/members/`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdateMember: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/members/${id}/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminDeleteMember: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/members/${id}/`, {
+      method: 'DELETE',
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Trainers Management
+  adminGetTrainers: async () => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/trainers/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminCreateTrainer: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/trainers/`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdateTrainer: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/trainers/${id}/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminDeleteTrainer: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/trainers/${id}/`, {
+      method: 'DELETE',
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Classes Management
+  adminGetClasses: async () => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/classes/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminCreateClass: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/classes/`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdateClass: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/classes/${id}/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminDeleteClass: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/classes/${id}/`, {
+      method: 'DELETE',
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Timetable Management
+  adminGetTimetable: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/api/admin/timetable/?${query}`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminCreateTimetable: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/timetable/`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdateTimetable: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/timetable/${id}/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminDeleteTimetable: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/timetable/${id}/`, {
+      method: 'DELETE',
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Memberships & Plans Management
+  adminGetPlans: async () => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/plans/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminCreatePlan: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/plans/`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdatePlan: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/plans/${id}/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminDeletePlan: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/plans/${id}/`, {
+      method: 'DELETE',
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Payments Management
+  adminGetPayments: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/api/admin/payments/?${query}`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminCreatePayment: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/payments/`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdatePayment: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/payments/${id}/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  // Messages Inbox
+  adminGetMessages: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/api/admin/messages/?${query}`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdateMessage: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/messages/${id}/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminDeleteMessage: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/messages/${id}/`, {
+      method: 'DELETE',
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Blog Management
+  adminGetBlogs: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/api/admin/blogs/?${query}`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminCreateBlog: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/blogs/`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdateBlog: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/blogs/${id}/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminDeleteBlog: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/blogs/${id}/`, {
+      method: 'DELETE',
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Analytics Reports
+  adminGetReports: async () => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/reports/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Audit Logs
+  adminGetAuditLogs: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/api/admin/audit-logs/?${query}`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Notifications
+  adminGetNotifications: async () => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/notifications/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminMarkNotificationRead: async (id = 'all') => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/notifications/${id}/`, {
+      method: 'PUT',
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  // Settings & Profile
+  adminGetSettings: async () => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/settings/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdateSettings: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/settings/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminGetProfile: async () => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/profile/`, {
+      headers: getAdminHeaders()
+    });
+    return await handleResponse(res);
+  },
+
+  adminUpdateProfile: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/profile/`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  },
+
+  adminGatewayTest: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/api/admin/gateway-test/`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  }
 };
 
 export default api;

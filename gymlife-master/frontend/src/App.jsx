@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -20,11 +20,31 @@ import Index from './pages/Index';
 import Main from './pages/Main';
 import Services from './pages/Services';
 import Team from './pages/Team';
-import AdminLogin from './pages/AdminLogin';
-import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import MemberDashboard from './pages/MemberDashboard';
+
+// Admin System Components & Pages
+import AdminLogin from './pages/AdminLogin';
+import AdminRoute from './components/admin/AdminRoute';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminAppointments from './pages/admin/AdminAppointments';
+import AdminMembers from './pages/admin/AdminMembers';
+
+import AdminTrainers from './pages/admin/AdminTrainers';
+import AdminClasses from './pages/admin/AdminClasses';
+import AdminTimetable from './pages/admin/AdminTimetable';
+import AdminMemberships from './pages/admin/AdminMemberships';
+import AdminPayments from './pages/admin/AdminPayments';
+import AdminMessages from './pages/admin/AdminMessages';
+import AdminBlog from './pages/admin/AdminBlog';
+import AdminReports from './pages/admin/AdminReports';
+import AdminNotifications from './pages/admin/AdminNotifications';
+import AdminAuditLogs from './pages/admin/AdminAuditLogs';
+
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminProfile from './pages/admin/AdminProfile';
 
 function App() {
   return (
@@ -35,11 +55,39 @@ function App() {
             <SpeedInsights />
             <AuthModal />
             <Routes>
-              {/* Standalone Admin Routes */}
+              {/* Standalone Admin Login */}
               <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
-              {/* Main Application Layout Routes */}
+              {/* Protected Production Admin Panel Routes */}
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                }
+              >
+                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="appointments" element={<AdminAppointments />} />
+                <Route path="members" element={<AdminMembers />} />
+
+                <Route path="trainers" element={<AdminTrainers />} />
+                <Route path="classes" element={<AdminClasses />} />
+                <Route path="timetable" element={<AdminTimetable />} />
+                <Route path="memberships" element={<AdminMemberships />} />
+                <Route path="payments" element={<AdminPayments />} />
+                <Route path="messages" element={<AdminMessages />} />
+                <Route path="blog" element={<AdminBlog />} />
+                <Route path="reports" element={<AdminReports />} />
+                <Route path="notifications" element={<AdminNotifications />} />
+                <Route path="audit-logs" element={<AdminAuditLogs />} />
+
+                <Route path="settings" element={<AdminSettings />} />
+                <Route path="profile" element={<AdminProfile />} />
+              </Route>
+
+              {/* Main Public Application Layout Routes */}
               <Route element={<Layout />}>
                 <Route path="/" element={<Index />} />
                 <Route path="/about-us" element={<AboutUs />} />

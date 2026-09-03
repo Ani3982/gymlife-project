@@ -38,11 +38,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    'rest_framework',
     'core',
+    'notifications',
 ]
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    'core.middleware.SecurityHeadersMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -51,6 +55,18 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# --------------------------------------------------------------------------
+# Defensive Web Application Security Settings
+# --------------------------------------------------------------------------
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB max payload size protection against large body DoS
+
 
 ROOT_URLCONF = 'gymlife_project.urls'
 
@@ -136,3 +152,63 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5174",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# --------------------------------------------------------------------------
+# Email & Real-Life Messaging Configuration (Brevo SMTP & Fast2SMS)
+# --------------------------------------------------------------------------
+from decouple import config
+
+# Brevo SMTP Configuration
+BREVO_SMTP_SERVER = config('BREVO_SMTP_SERVER', default='smtp-relay.brevo.com')
+BREVO_SMTP_PORT = config('BREVO_SMTP_PORT', default=587, cast=int)
+BREVO_SMTP_LOGIN = config('BREVO_SMTP_LOGIN', default=config('EMAIL_HOST_USER', default=''))
+BREVO_SMTP_KEY = config('BREVO_SMTP_KEY', default=config('EMAIL_HOST_PASSWORD', default=''))
+
+EMAIL_HOST = config('EMAIL_HOST', default=BREVO_SMTP_SERVER)
+EMAIL_PORT = config('EMAIL_PORT', default=BREVO_SMTP_PORT, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default=BREVO_SMTP_LOGIN)
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default=BREVO_SMTP_KEY)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='GymLife Fitness Arena <support.gymcenter@gmail.com>')
+EMAIL_TIMEOUT = 10
+
+# Use SMTP if Brevo/Gmail credentials provided, otherwise fallback to console backend
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.smtp.EmailBackend' if (EMAIL_HOST_USER and EMAIL_HOST_PASSWORD) else 'django.core.mail.backends.console.EmailBackend'
+)
+
+# SMS Provider Credentials (Fast2SMS / Twilio)
+FAST2SMS_API_KEY = config('FAST2SMS_API_KEY', default='')
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
+TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='')
+
+# Safe Structured Logging for Notifications
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] [{levelname}] [{name}] {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'notifications': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+
+
+
