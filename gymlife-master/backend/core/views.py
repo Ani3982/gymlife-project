@@ -19,8 +19,6 @@ from .models import (
     PricingPlan, Member, Payment, ContactMessage, BlogPost,
     GalleryItem, ContactInfo, GymSettings, Notification, AuditLog, Appointment, Booking
 )
-from .services.email_service import send_booking_email
-from .services.sms_service import send_booking_sms
 from notifications.services import NotificationService, EmailService, SMSService, WhatsAppService
 from .security import (
     generate_secure_token, verify_secure_token, get_client_ip_address,
@@ -257,7 +255,7 @@ def serialize_audit_log(log):
     }
 
 def serialize_booking(b):
-    sms_res = send_booking_sms(b)
+    whatsapp_url = WhatsAppService.generate_booking_link(b, 'CONFIRMATION') if b.phone else ''
     return {
         'id': b.id,
         'ref_id': b.ref_id,
@@ -276,8 +274,7 @@ def serialize_booking(b):
         'status_display': b.get_status_display(),
         'email_delivered': b.email_delivered,
         'sms_delivered': b.sms_delivered,
-        'whatsapp_url': sms_res.get('whatsapp_url', ''),
-        'sms_uri': sms_res.get('sms_uri', ''),
+        'whatsapp_url': whatsapp_url,
         'created_at': b.created_at.strftime('%Y-%m-%d %H:%M') if b.created_at else ''
     }
 
@@ -945,7 +942,7 @@ def get_booking_detail(request, ref_id):
             return JsonResponse({'status': 'error', 'message': f"Booking with reference '{ref_clean}' not found."}, status=404)
 
         display_time = booking.scheduled_time.strftime('%A, %B %d, %Y at %I:%M %p') if booking.scheduled_time else ''
-        sms_res = send_booking_sms(booking)
+        whatsapp_url = WhatsAppService.generate_booking_link(booking, 'CONFIRMATION') if booking.phone else ''
 
         return JsonResponse({
             'status': 'success',
@@ -963,8 +960,7 @@ def get_booking_detail(request, ref_id):
                 'status_code': booking.status,
                 'email_delivered': booking.email_delivered,
                 'sms_delivered': booking.sms_delivered,
-                'whatsapp_url': sms_res.get('whatsapp_url', ''),
-                'sms_uri': sms_res.get('sms_uri', ''),
+                'whatsapp_url': whatsapp_url,
                 'created_at': booking.created_at.isoformat()
             }
         })
@@ -1198,12 +1194,12 @@ def admin_bookings(request, pk=None):
             send_sms = data.get('send_sms', True)
 
             if send_email:
-                delivered, _ = send_booking_email(booking)
-                booking.email_delivered = delivered
+                email_res = EmailService.send_booking_confirmation(booking)
+                booking.email_delivered = email_res.get('success', False)
 
             if send_sms:
-                sms_res = send_booking_sms(booking)
-                booking.sms_delivered = sms_res.get('sms_delivered', False)
+                sms_res = SMSService.send_booking_confirmation(booking)
+                booking.sms_delivered = sms_res.get('success', False)
 
             booking.save(update_fields=['email_delivered', 'sms_delivered'])
 
