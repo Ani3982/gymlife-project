@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { LanguageProvider } from './context/LanguageContext';
 import AuthModal from './components/AuthModal';
+import DynamicMeta from './components/DynamicMeta';
 
 import Layout from './components/Layout';
 import NotFound from './pages/NotFound';
@@ -49,6 +50,7 @@ import AdminProfile from './pages/admin/AdminProfile';
 function App() {
   return (
     <BrowserRouter>
+      <DynamicMeta />
       <LanguageProvider>
         <ToastProvider>
           <AuthProvider>
