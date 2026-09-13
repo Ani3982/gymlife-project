@@ -34,7 +34,7 @@ export const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
-    const cleanName = user.displayName || (user.email ? user.email.split('@')[0].split(/[\._\-]/).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') : 'Alex Rivers');
+    const cleanName = user.displayName || (user.email ? user.email.split('@')[0].split(/[\._\-]/).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') : 'Member');
     return {
       success: true,
       user: {
@@ -48,29 +48,7 @@ export const signInWithGoogle = async () => {
       }
     };
   } catch (error) {
-    console.warn('Firebase Google Auth Popup Warning/Error:', error);
-    // If popup blocked or demo keys used, provide graceful authenticated Google session for demo
-    if (
-      !error.code ||
-      error.code.includes('api-key') || 
-      error.message?.includes('api-key') || 
-      error.code === 'auth/popup-closed-by-user' || 
-      error.code === 'auth/configuration-not-found' ||
-      error.code === 'auth/invalid-api-key'
-    ) {
-      return {
-        success: true,
-        user: {
-          id: 'google-alex-rivers',
-          name: 'Alex Rivers',
-          email: 'alex.rivers@gmail.com',
-          photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-          role: 'member',
-          plan: '12 Month VIP Membership',
-          joined_date: 'August 2026'
-        }
-      };
-    }
+    console.warn('Firebase Google Auth Popup Error:', error);
     throw error;
   }
 };

@@ -1,8 +1,9 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import GoogleAccountModal from './GoogleAccountModal';
+import { triggerGoogleOAuthPopup } from '../utils/googleAuth';
 
 export const AuthModal = () => {
   const { isAuthModalOpen, authModalTab, closeAuthModal, setAuthModalTab, login, register } = useAuth();
@@ -21,6 +22,25 @@ export const AuthModal = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const { loginWithGoogle } = useAuth();
+
+  const handleGoogleClick = async () => {
+    setLoading(true);
+    try {
+      const res = await triggerGoogleOAuthPopup();
+      if (res && res.user) {
+        const loginRes = await loginWithGoogle(res.user);
+        showSuccess(`Welcome to GymLife, ${loginRes.user?.name || res.user.name}! 🚀`);
+        closeAuthModal();
+        return;
+      }
+      setShowGoogleModal(true);
+    } catch {
+      setShowGoogleModal(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isAuthModalOpen) return null;
 
@@ -59,8 +79,8 @@ export const AuthModal = () => {
   return (
     <>
       <div className="auth-modal-overlay" onClick={closeAuthModal}>
-        <div className="auth-modal-content" onClick={(e) => e.stopPropagation()}>
-          <button className="auth-close-btn" onClick={closeAuthModal} aria-label="Close modal">
+        <div className="auth-modal-dialog auth-modal-content" onClick={(e) => e.stopPropagation()}>
+          <button className="auth-modal-close auth-close-btn" onClick={closeAuthModal} aria-label="Close modal">
             <i className="fa fa-times"></i>
           </button>
 
@@ -99,7 +119,7 @@ export const AuthModal = () => {
           <button 
             type="button" 
             className="btn-google-auth" 
-            onClick={() => setShowGoogleModal(true)}
+            onClick={handleGoogleClick}
             disabled={loading}
           >
             <svg className="google-icon" viewBox="0 0 24 24" width="18" height="18">

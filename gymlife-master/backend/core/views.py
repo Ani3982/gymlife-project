@@ -2853,14 +2853,14 @@ def firebase_auth_login(request):
                 if email and '@' in email:
                     prefix = email.split('@')[0].replace('athlete.', '').replace('google.', '')
                     clean_parts = [p.capitalize() for p in re.split(r'[\._\-]', prefix) if p and p.lower() not in ['google', 'acct', 'token']]
-                    name = ' '.join(clean_parts) if clean_parts else 'Alex Rivers'
+                    name = ' '.join(clean_parts) if clean_parts else email.split('@')[0].capitalize()
                 else:
-                    name = 'Alex Rivers'
+                    name = 'Member'
 
             if not email:
                 email = f"{uid}@firebase.gymlife.com"
 
-            first_name = name.split(' ')[0] if name else 'Alex'
+            first_name = name.split(' ')[0] if name else 'Member'
             last_name = name.split(' ', 1)[1] if (name and ' ' in name) else ''
 
             # Lookup or create User

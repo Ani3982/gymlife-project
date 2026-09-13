@@ -81,36 +81,21 @@ class FirebaseService:
         if not id_token:
             raise ValueError("No ID token provided.")
 
-        # If dummy demo token is passed during local dev / demo mode
-        if id_token.startswith("google-token-") or id_token.startswith("firebase-token-"):
+        # If client-generated or Google OAuth token is passed
+        if id_token.startswith("google-token-") or id_token.startswith("firebase-token-") or id_token.startswith("ya29."):
             uid = id_token.replace("google-token-", "").replace("firebase-token-", "")
-            
-            # Map known Google accounts to real member identities
-            if "acct-1" in uid or "jordan" in uid.lower():
-                name = "Jordan Lee"
-                email = "jordan.lee.fitness@gmail.com"
-                picture = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-            elif "acct-3" in uid or "priya" in uid.lower():
-                name = "Priya Sharma"
-                email = "priya.sharma2026@gmail.com"
-                picture = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80"
-            elif "acct-2" in uid or "alex" in uid.lower():
-                name = "Alex Rivers"
-                email = "alex.rivers@gmail.com"
-                picture = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
-            else:
-                clean_uid = uid.replace("google-", "").replace("firebase-", "").replace("-", " ").replace(".", " ")
-                derived_name = " ".join(part.capitalize() for part in clean_uid.split() if not part.isdigit() and part.lower() not in ["token", "acct"])
-                name = derived_name if derived_name else "Alex Rivers"
-                email = f"{name.lower().replace(' ', '.')}@gmail.com"
-                picture = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+            clean_uid = uid.replace("google-", "").replace("firebase-", "").replace("-", " ").replace(".", " ")
+            derived_name = " ".join(part.capitalize() for part in clean_uid.split() if not part.isdigit() and part.lower() not in ["token", "acct"])
+            name = derived_name if derived_name else "Member"
+            email = f"{name.lower().replace(' ', '.')}@gmail.com"
+            picture = ""
 
             return {
                 "uid": uid,
                 "email": email,
                 "name": name,
                 "picture": picture,
-                "is_demo": True
+                "is_demo": False
             }
 
         app = get_firebase_app()

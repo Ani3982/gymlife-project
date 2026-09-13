@@ -14,15 +14,11 @@ const sanitizeUser = (rawUser) => {
   let name = rawUser.name || rawUser.username || '';
   if (!name || name.toLowerCase().includes('google athlete') || name.toLowerCase() === 'athlete') {
     if (rawUser.email) {
-      if (rawUser.email.includes('acct-1') || rawUser.email.includes('jordan')) name = 'Jordan Lee';
-      else if (rawUser.email.includes('acct-3') || rawUser.email.includes('priya')) name = 'Priya Sharma';
-      else if (rawUser.email.includes('acct-2') || rawUser.email.includes('alex')) name = 'Alex Rivers';
-      else {
-        const clean = rawUser.email.split('@')[0].replace('athlete.', '').replace('google.', '');
-        name = clean.split(/[\._\-]/).filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') || 'Alex Rivers';
-      }
+      const clean = rawUser.email.split('@')[0].replace('athlete.', '').replace('google.', '');
+      const parts = clean.split(/[\._\-]/).filter(Boolean);
+      name = parts.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') || rawUser.email.split('@')[0];
     } else {
-      name = 'Alex Rivers';
+      name = 'Member';
     }
   }
   return { ...rawUser, name };

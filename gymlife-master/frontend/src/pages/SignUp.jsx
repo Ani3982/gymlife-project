@@ -1,8 +1,9 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import GoogleAccountModal from '../components/GoogleAccountModal';
+import { triggerGoogleOAuthPopup } from '../utils/googleAuth';
 
 const SignUp = () => {
   const { register, isAuthenticated } = useAuth();
@@ -21,6 +22,25 @@ const SignUp = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const { loginWithGoogle } = useAuth();
+
+  const handleGoogleClick = async () => {
+    setLoading(true);
+    try {
+      const res = await triggerGoogleOAuthPopup();
+      if (res && res.user) {
+        const loginRes = await loginWithGoogle(res.user);
+        showSuccess(`Welcome to GymLife, ${loginRes.user?.name || res.user.name}! 🚀`);
+        navigate('/dashboard');
+        return;
+      }
+      setShowGoogleModal(true);
+    } catch {
+      setShowGoogleModal(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (isAuthenticated) {
     navigate('/dashboard');
@@ -59,7 +79,7 @@ const SignUp = () => {
                   <button 
                     type="button" 
                     className="btn-google-auth" 
-                    onClick={() => setShowGoogleModal(true)}
+                    onClick={handleGoogleClick}
                     disabled={loading}
                   >
                     <svg className="google-icon" viewBox="0 0 24 24" width="18" height="18">
