@@ -3,11 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import GoogleAccountModal from '../components/GoogleAccountModal';
-import { triggerGoogleOAuthPopup, openOfficialGooglePopup, getGoogleClientId } from '../utils/googleAuth';
+import { 
+  triggerGoogleOAuthPopup, 
+  openOfficialGooglePopup, 
+  getGoogleClientId,
+  redirectToGoogleOAuth 
+} from '../utils/googleAuth';
 
 const SignUp = () => {
   const { register, isAuthenticated } = useAuth();
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError, showInfo } = useToast();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -40,10 +45,19 @@ const SignUp = () => {
         setShowGoogleModal(true);
       }
     } catch (err) {
-      if (err.message === 'GOOGLE_CLIENT_ID_REQUIRED') {
+      const msg = err?.message || '';
+      if (msg === 'GOOGLE_CLIENT_ID_REQUIRED') {
         setShowGoogleModal(true);
+      } else if (
+        msg.includes('Failed to open popup window') ||
+        msg.toLowerCase().includes('popup')
+      ) {
+        showInfo('Browser blocked pop-up. Redirecting directly to Google Sign-In...');
+        setTimeout(() => {
+          redirectToGoogleOAuth();
+        }, 300);
       } else {
-        showError(err.message || 'Google Sign-In popup closed or cancelled.');
+        showError(msg || 'Google Sign-In popup closed or cancelled.');
       }
     } finally {
       setLoading(false);

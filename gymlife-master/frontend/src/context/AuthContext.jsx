@@ -6,6 +6,11 @@ import {
   loginWithEmail,
   logoutFirebase
 } from '../utils/firebase';
+import {
+  parseOAuthRedirectToken,
+  fetchGoogleUserProfile,
+  initGoogleTokenClient
+} from '../utils/googleAuth';
 
 const AuthContext = createContext();
 
@@ -60,6 +65,28 @@ export const AuthProvider = ({ children }) => {
       }).catch(() => {});
     }
   }, [token]);
+
+  // Handle Google OAuth redirect flow (fallback when popup blocker is enabled)
+  useEffect(() => {
+    initGoogleTokenClient();
+
+    const processOAuthRedirect = async () => {
+      const redirectToken = parseOAuthRedirectToken();
+      if (redirectToken) {
+        try {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          const userProfile = await fetchGoogleUserProfile(redirectToken);
+          if (userProfile) {
+            await loginWithGoogle(userProfile);
+          }
+        } catch (err) {
+          console.warn('Google redirect token processing note:', err);
+        }
+      }
+    };
+
+    processOAuthRedirect();
+  }, []);
 
   const login = async (credentials) => {
     const data = await api.authLogin(credentials);
