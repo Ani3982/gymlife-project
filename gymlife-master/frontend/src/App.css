@@ -2885,6 +2885,235 @@
   margin: 0;
 }
 
+/* ==========================================================================
+   Google Password Challenge Slide ("Welcome" Step)
+   ========================================================================== */
+.google-slide-container {
+  position: relative;
+  width: 100%;
+}
+
+.google-slide-container.slide-forward {
+  animation: googleSlideInForward 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.google-slide-container.slide-backward {
+  animation: googleSlideInBackward 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes googleSlideInForward {
+  from {
+    opacity: 0;
+    transform: translateX(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes googleSlideInBackward {
+  from {
+    opacity: 0;
+    transform: translateX(-25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Selected Account Pill / Chip */
+.google-account-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid #5f6368;
+  border-radius: 20px;
+  padding: 6px 14px 6px 10px;
+  color: #e8eaed;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 14px;
+  max-width: 100%;
+  text-align: left;
+}
+
+.google-account-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #8ab4f8;
+}
+
+.account-pill-icon {
+  color: #9aa0a6;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.account-pill-email {
+  color: #e8eaed;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-pill-arrow {
+  color: #9aa0a6;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+
+/* Blue Passkey Banner */
+.google-passkey-banner {
+  background: #0842a0;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 24px;
+  color: #ffffff;
+}
+
+.passkey-banner-icon {
+  color: #d3e3fd;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.passkey-banner-text {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #ffffff;
+  font-weight: 400;
+}
+
+/* Password Form */
+.google-password-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.google-password-field-wrap {
+  width: 100%;
+}
+
+.google-password-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: 1px solid #5f6368;
+  border-radius: 6px;
+  font-size: 15px;
+  color: #e8eaed;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.google-password-input:focus {
+  border-color: #8ab4f8;
+  box-shadow: 0 0 0 1px #8ab4f8;
+}
+
+.google-show-password-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #e8eaed;
+  user-select: none;
+}
+
+.google-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #8ab4f8;
+  cursor: pointer;
+}
+
+.google-password-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 36px;
+}
+
+.google-try-another-btn {
+  background: transparent;
+  border: none;
+  color: #8ab4f8;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 4px;
+  transition: color 0.15s;
+}
+
+.google-try-another-btn:hover {
+  color: #a8c7fa;
+  text-decoration: underline;
+}
+
+/* Try Another Way Drawer */
+.google-try-another-drawer {
+  margin-top: 20px;
+  padding: 16px;
+  background: #1f1f20;
+  border: 1px solid #3c4043;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: googleFadeIn 0.2s ease;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #9aa0a6;
+  margin-bottom: 4px;
+}
+
+.drawer-close {
+  background: none;
+  border: none;
+  color: #9aa0a6;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.drawer-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid #3c4043;
+  border-radius: 8px;
+  color: #e8eaed;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.drawer-option-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #8ab4f8;
+  color: #8ab4f8;
+}
+
 /* Footer notice */
 .google-chooser-footer {
   margin-top: 36px;
