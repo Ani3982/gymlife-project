@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import api from '../utils/api';
@@ -97,7 +97,7 @@ const Footer = () => {
                   </div>
                   <div className="col-lg-4 col-md-6">
                       <div className="fs-widget">
-                          <h4>{t('stay_connected', 'Opening Hours')}</h4>
+                          <h4>{t('opening_hours', 'Opening Hours')}</h4>
                           <p style={{ color: '#a4a5b0', fontSize: '14px', marginBottom: '8px' }}>
                             <i className="fa fa-clock-o" style={{ color: '#f36100', marginRight: '8px' }}></i>
                             {t('mon_fri_hours', 'Monday - Friday: 06:00 - 22:00')}

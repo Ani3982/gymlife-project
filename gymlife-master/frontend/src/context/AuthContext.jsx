@@ -9,11 +9,38 @@ import {
 
 const AuthContext = createContext();
 
+const sanitizeUser = (rawUser) => {
+  if (!rawUser) return null;
+  let name = rawUser.name || rawUser.username || '';
+  if (!name || name.toLowerCase().includes('google athlete') || name.toLowerCase() === 'athlete') {
+    if (rawUser.email) {
+      if (rawUser.email.includes('acct-1') || rawUser.email.includes('jordan')) name = 'Jordan Lee';
+      else if (rawUser.email.includes('acct-3') || rawUser.email.includes('priya')) name = 'Priya Sharma';
+      else if (rawUser.email.includes('acct-2') || rawUser.email.includes('alex')) name = 'Alex Rivers';
+      else {
+        const clean = rawUser.email.split('@')[0].replace('athlete.', '').replace('google.', '');
+        name = clean.split(/[\._\-]/).filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') || 'Alex Rivers';
+      }
+    } else {
+      name = 'Alex Rivers';
+    }
+  }
+  return { ...rawUser, name };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem('gymlife_user');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const clean = sanitizeUser(parsed);
+        if (clean && clean.name !== parsed.name) {
+          localStorage.setItem('gymlife_user', JSON.stringify(clean));
+        }
+        return clean;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -27,23 +54,25 @@ export const AuthProvider = ({ children }) => {
   const [authModalTab, setAuthModalTab] = useState('login'); // 'login' | 'register'
 
   useEffect(() => {
-    if (token && !user) {
+    if (token) {
       api.getAuthMe(token).then((res) => {
         if (res && res.status === 'success' && res.user) {
-          setUser(res.user);
-          localStorage.setItem('gymlife_user', JSON.stringify(res.user));
+          const clean = sanitizeUser(res.user);
+          setUser(clean);
+          localStorage.setItem('gymlife_user', JSON.stringify(clean));
         }
       }).catch(() => {});
     }
-  }, [token, user]);
+  }, [token]);
 
   const login = async (credentials) => {
     const data = await api.authLogin(credentials);
     if (data && data.status === 'success') {
-      setUser(data.user);
+      const clean = sanitizeUser(data.user);
+      setUser(clean);
       setToken(data.token);
       localStorage.setItem('gymlife_token', data.token);
-      localStorage.setItem('gymlife_user', JSON.stringify(data.user));
+      localStorage.setItem('gymlife_user', JSON.stringify(clean));
       setIsAuthModalOpen(false);
       return data;
     }
@@ -53,10 +82,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     const data = await api.authRegister(userData);
     if (data && data.status === 'success') {
-      setUser(data.user);
+      const clean = sanitizeUser(data.user);
+      setUser(clean);
       setToken(data.token);
       localStorage.setItem('gymlife_token', data.token);
-      localStorage.setItem('gymlife_user', JSON.stringify(data.user));
+      localStorage.setItem('gymlife_user', JSON.stringify(clean));
       setIsAuthModalOpen(false);
       return data;
     }
@@ -66,7 +96,8 @@ export const AuthProvider = ({ children }) => {
   // Google Sign-In with selected account or popup
   const loginWithGoogle = async (selectedAccount = null) => {
     if (selectedAccount && selectedAccount.email) {
-      const userPayload = {
+      const generatedToken = `google-token-${selectedAccount.id || Date.now()}`;
+      const payload = {
         id: selectedAccount.id || `google-${Date.now()}`,
         name: selectedAccount.name || selectedAccount.email.split('@')[0],
         email: selectedAccount.email,
@@ -75,24 +106,77 @@ export const AuthProvider = ({ children }) => {
         plan: selectedAccount.plan || '12 Month VIP Membership',
         joined_date: 'August 2026'
       };
-      const generatedToken = `google-token-${userPayload.id}`;
-      setUser(userPayload);
+
+      try {
+        const backendRes = await api.authFirebase(generatedToken, {
+          name: payload.name,
+          email: payload.email,
+          avatar: payload.photoURL,
+          plan: payload.plan
+        });
+        if (backendRes && backendRes.status === 'success' && backendRes.token) {
+          const cleanBackendUser = sanitizeUser({
+            ...backendRes.user,
+            name: (backendRes.user?.name && !backendRes.user.name.toLowerCase().includes('google athlete'))
+              ? backendRes.user.name
+              : payload.name,
+            photoURL: payload.photoURL || backendRes.user?.photoURL
+          });
+          setUser(cleanBackendUser);
+          setToken(backendRes.token);
+          localStorage.setItem('gymlife_token', backendRes.token);
+          localStorage.setItem('gymlife_user', JSON.stringify(cleanBackendUser));
+          setIsAuthModalOpen(false);
+          return { success: true, user: cleanBackendUser };
+        }
+      } catch (err) {
+        console.warn('Backend Firebase token exchange note:', err);
+      }
+
+      const cleanPayload = sanitizeUser(payload);
+      setUser(cleanPayload);
       setToken(generatedToken);
       localStorage.setItem('gymlife_token', generatedToken);
-      localStorage.setItem('gymlife_user', JSON.stringify(userPayload));
+      localStorage.setItem('gymlife_user', JSON.stringify(cleanPayload));
       setIsAuthModalOpen(false);
-      return { success: true, user: userPayload };
+      return { success: true, user: cleanPayload };
     }
 
     const res = await signInWithGoogle();
     if (res && res.success && res.user) {
-      const generatedToken = `google-token-${res.user.id}`;
-      setUser(res.user);
-      setToken(generatedToken);
-      localStorage.setItem('gymlife_token', generatedToken);
-      localStorage.setItem('gymlife_user', JSON.stringify(res.user));
+      const rawToken = `google-token-${res.user.id}`;
+      try {
+        const backendRes = await api.authFirebase(rawToken, {
+          name: res.user.name,
+          email: res.user.email,
+          avatar: res.user.photoURL
+        });
+        if (backendRes && backendRes.status === 'success' && backendRes.token) {
+          const cleanBackendUser = sanitizeUser({
+            ...backendRes.user,
+            name: (backendRes.user?.name && !backendRes.user.name.toLowerCase().includes('google athlete'))
+              ? backendRes.user.name
+              : res.user.name,
+            photoURL: res.user.photoURL || backendRes.user?.photoURL
+          });
+          setUser(cleanBackendUser);
+          setToken(backendRes.token);
+          localStorage.setItem('gymlife_token', backendRes.token);
+          localStorage.setItem('gymlife_user', JSON.stringify(cleanBackendUser));
+          setIsAuthModalOpen(false);
+          return { success: true, user: cleanBackendUser };
+        }
+      } catch (err) {
+        console.warn('Backend Firebase token exchange note:', err);
+      }
+
+      const cleanUser = sanitizeUser(res.user);
+      setUser(cleanUser);
+      setToken(rawToken);
+      localStorage.setItem('gymlife_token', rawToken);
+      localStorage.setItem('gymlife_user', JSON.stringify(cleanUser));
       setIsAuthModalOpen(false);
-      return res;
+      return { success: true, user: cleanUser };
     }
     throw new Error('Google Sign-In was cancelled or failed');
   };
@@ -101,10 +185,24 @@ export const AuthProvider = ({ children }) => {
   const firebaseLogin = async (email, password) => {
     const res = await loginWithEmail(email, password);
     if (res && res.success && res.user) {
-      const generatedToken = `firebase-token-${res.user.id}`;
+      const rawToken = `firebase-token-${res.user.id}`;
+      try {
+        const backendRes = await api.authFirebase(rawToken);
+        if (backendRes && backendRes.status === 'success' && backendRes.token) {
+          setUser(backendRes.user);
+          setToken(backendRes.token);
+          localStorage.setItem('gymlife_token', backendRes.token);
+          localStorage.setItem('gymlife_user', JSON.stringify(backendRes.user));
+          setIsAuthModalOpen(false);
+          return { success: true, user: backendRes.user };
+        }
+      } catch (err) {
+        console.warn('Backend Firebase login exchange note:', err);
+      }
+
       setUser(res.user);
-      setToken(generatedToken);
-      localStorage.setItem('gymlife_token', generatedToken);
+      setToken(rawToken);
+      localStorage.setItem('gymlife_token', rawToken);
       localStorage.setItem('gymlife_user', JSON.stringify(res.user));
       setIsAuthModalOpen(false);
       return res;
@@ -116,10 +214,24 @@ export const AuthProvider = ({ children }) => {
   const firebaseRegister = async (name, email, password) => {
     const res = await registerWithEmail(email, password, name);
     if (res && res.success && res.user) {
-      const generatedToken = `firebase-token-${res.user.id}`;
+      const rawToken = `firebase-token-${res.user.id}`;
+      try {
+        const backendRes = await api.authFirebase(rawToken);
+        if (backendRes && backendRes.status === 'success' && backendRes.token) {
+          setUser(backendRes.user);
+          setToken(backendRes.token);
+          localStorage.setItem('gymlife_token', backendRes.token);
+          localStorage.setItem('gymlife_user', JSON.stringify(backendRes.user));
+          setIsAuthModalOpen(false);
+          return { success: true, user: backendRes.user };
+        }
+      } catch (err) {
+        console.warn('Backend Firebase register exchange note:', err);
+      }
+
       setUser(res.user);
-      setToken(generatedToken);
-      localStorage.setItem('gymlife_token', generatedToken);
+      setToken(rawToken);
+      localStorage.setItem('gymlife_token', rawToken);
       localStorage.setItem('gymlife_user', JSON.stringify(res.user));
       setIsAuthModalOpen(false);
       return res;

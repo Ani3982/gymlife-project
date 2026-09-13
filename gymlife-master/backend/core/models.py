@@ -466,8 +466,19 @@ class GymSettings(models.Model):
     twitter_url = models.URLField(max_length=500, default="https://www.twitter.com", blank=True, null=True)
     instagram_url = models.URLField(max_length=500, default="https://www.instagram.com", blank=True, null=True)
     youtube_url = models.URLField(max_length=500, default="https://www.youtube.com", blank=True, null=True)
-    currency_symbol = models.CharField(max_length=10, default="$")
+    currency_symbol = models.CharField(max_length=10, default="₹")
     tax_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=5.00)
+
+    # SMTP Email Gateway Settings
+    smtp_provider = models.CharField(max_length=50, default="GMAIL", blank=True)
+    smtp_host = models.CharField(max_length=255, default="smtp.gmail.com", blank=True)
+    smtp_port = models.IntegerField(default=587)
+    smtp_user = models.CharField(max_length=255, blank=True, default="")
+    smtp_password = models.CharField(max_length=255, blank=True, default="")
+    smtp_from_email = models.CharField(max_length=255, blank=True, default="GymLife Fitness Arena <support.gymcenter@gmail.com>")
+    smtp_use_tls = models.BooleanField(default=True)
+    smtp_use_ssl = models.BooleanField(default=False)
+
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

@@ -77,9 +77,11 @@ window.initGymTemplate = function() {
         animateOut: 'fadeOut',
         animateIn: 'fadeIn',
         navText: ['<i class="fa fa-angle-left"></i>', '<i class="fa fa-angle-right"></i>'],
-        smartSpeed: 1200,
+        smartSpeed: 1000,
         autoHeight: false,
-        autoplay: false
+        autoplay: true,
+        autoplayTimeout: 4000,
+        autoplayHoverPause: false
     });
 
     /*------------------

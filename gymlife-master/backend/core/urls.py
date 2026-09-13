@@ -6,6 +6,8 @@ urlpatterns = [
     # Public APIs & Bookings
     # -------------------------------------------------------------
     path('api/bookings/', views.handle_bookings, name='handle_bookings'),
+    path('api/bookings/<str:ref_id>/resend-email/', views.resend_booking_confirmation_email, name='resend_booking_confirmation_email'),
+    path('api/bookings/<str:ref_id>/resend-sms/', views.resend_booking_confirmation_sms, name='resend_booking_confirmation_sms'),
     path('api/bookings/<str:ref_id>/', views.get_booking_detail, name='get_booking_detail'),
     path('api/appointments/', views.create_appointment, name='create_appointment'),
 
@@ -27,6 +29,8 @@ urlpatterns = [
     # -------------------------------------------------------------
     path('api/auth/register/', views.auth_register, name='auth_register'),
     path('api/auth/login/', views.auth_login, name='auth_login'),
+    path('api/auth/firebase/', views.firebase_auth_login, name='firebase_auth_login'),
+    path('api/auth/google/', views.firebase_auth_login, name='google_auth_login'),
     path('api/auth/me/', views.auth_me, name='auth_me'),
     path('api/member/dashboard/', views.member_dashboard_data, name='member_dashboard_data'),
 
@@ -88,6 +92,7 @@ urlpatterns = [
     # Settings & Profile
     path('api/admin/settings/', views.admin_settings, name='admin_settings'),
     path('api/admin/profile/', views.admin_profile, name='admin_profile'),
+    path('api/admin/upload-avatar/', views.admin_upload_avatar, name='admin_upload_avatar'),
     path('api/admin/gateway-test/', views.admin_gateway_test, name='admin_gateway_test'),
 
     # Root API health check response

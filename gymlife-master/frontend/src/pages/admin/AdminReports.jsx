@@ -29,15 +29,23 @@ const AdminReports = () => {
   const exportSummaryCSV = () => {
     if (!data) return;
     const lines = [
-      ['GymLife Production Operational Report', new Date().toLocaleDateString()],
+      ['GymLife Production Operational Financial Report (INR - ₹)', new Date().toLocaleDateString('en-IN')],
+      [],
+      ['EXECUTIVE FINANCIAL METRICS'],
+      ['Total Collected Revenue (₹)', `₹${Number(data.total_revenue_overall || 0).toLocaleString('en-IN')}`],
+      ['Total Members Registered', data.total_members_overall || 0],
       [],
       ['MEMBERSHIP PLAN DISTRIBUTION'],
-      ['Plan Name', 'Subscribers Count', 'Estimated Revenue Potential'],
-      ...(data.plan_distribution || []).map(p => [`"${p.name}"`, p.count, `$${p.revenue_potential}`]),
+      ['Plan Name', 'Subscribers Count', 'Estimated Revenue Potential (₹)'],
+      ...(data.plan_distribution || []).map(p => [`"${p.name}"`, p.count, `₹${Number(p.revenue_potential || 0).toLocaleString('en-IN')}`]),
       [],
       ['MONTHLY FINANCIAL & REGISTRATION PERFORMANCE'],
-      ['Month', 'New Members', 'Collected Revenue'],
-      ...(data.monthly_trends || []).map(m => [m.month, m.new_members, `$${m.revenue}`]),
+      ['Month', 'New Members', 'Collected Revenue (₹)'],
+      ...(data.monthly_trends || []).map(m => [m.month, m.new_members, `₹${Number(m.revenue || 0).toLocaleString('en-IN')}`]),
+      [],
+      ['REVENUE BY PAYMENT METHOD'],
+      ['Payment Method', 'Total Collected (₹)'],
+      ...(data.revenue_by_method || []).map(r => [`"${r.method}"`, `₹${Number(r.total || 0).toLocaleString('en-IN')}`]),
       [],
       ['CLASS & SESSION POPULARITY'],
       ['Class Name', 'Category', 'Coach', 'Weekly Sessions', 'Capacity'],
@@ -52,20 +60,24 @@ const AdminReports = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showSuccess('Analytics CSV export downloaded!');
+    showSuccess('Analytics CSV report (INR ₹) downloaded successfully!');
   };
 
   const planDist = data?.plan_distribution || [];
   const monthlyTrends = data?.monthly_trends || [];
   const classStats = data?.class_stats || [];
   const statusBreakdown = data?.status_breakdown || {};
+  const revenueByMethod = data?.revenue_by_method || [];
+  const totalRevenue = data?.total_revenue_overall || 0;
+  const totalMembers = data?.total_members_overall || 0;
+  const totalPotential = planDist.reduce((acc, p) => acc + (p.revenue_potential || 0), 0);
 
   return (
     <div className="admin-module-page">
       <div className="module-top-header">
         <div>
           <h2 className="module-title">EXECUTIVE REPORTS & GYM ANALYTICS</h2>
-          <p className="module-subtitle">Aggregated metrics on membership growth, revenue velocity, and discipline popularity.</p>
+          <p className="module-subtitle">Aggregated metrics on membership growth, Indian Rupee (₹) revenue velocity, and discipline popularity.</p>
         </div>
         <button type="button" onClick={exportSummaryCSV} className="admin-btn primary">
           <i className="fa fa-file-excel-o"></i> Export Comprehensive CSV
@@ -75,10 +87,69 @@ const AdminReports = () => {
       {loading ? (
         <div className="admin-empty-state" style={{ padding: '60px' }}>
           <div className="skeleton-bar" style={{ width: '40%', height: '30px', margin: '0 auto 12px' }}></div>
-          <p>Compiling real-time database metrics...</p>
+          <p>Compiling real-time database metrics in Indian Rupees (₹)...</p>
         </div>
       ) : (
         <div className="reports-layout-grid">
+          {/* Executive Revenue Overview Banner */}
+          <div className="reports-section-card full-width">
+            <h3 className="section-card-title">
+              <i className="fa fa-inr" style={{ color: '#22c55e', marginRight: '8px' }}></i>
+              EXECUTIVE REVENUE & FINANCIAL PERFORMANCE (INR)
+            </h3>
+            <div className="revenue-kpi-row">
+              <div className="revenue-kpi-item green">
+                <div className="kpi-icon-badge">
+                  <i className="fa fa-inr"></i>
+                </div>
+                <div className="kpi-details">
+                  <span className="revenue-kpi-label">TOTAL COLLECTED REVENUE</span>
+                  <span className="revenue-kpi-num">
+                    ₹{Number(totalRevenue).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+                  </span>
+                  <span className="revenue-kpi-subtext">Verified Real-Time Collections</span>
+                </div>
+              </div>
+
+              <div className="revenue-kpi-item orange">
+                <div className="kpi-icon-badge">
+                  <i className="fa fa-line-chart"></i>
+                </div>
+                <div className="kpi-details">
+                  <span className="revenue-kpi-label">EST. REVENUE POTENTIAL</span>
+                  <span className="revenue-kpi-num">
+                    ₹{Number(totalPotential).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+                  </span>
+                  <span className="revenue-kpi-subtext">From Active Tier Allocations</span>
+                </div>
+              </div>
+
+              <div className="revenue-kpi-item blue">
+                <div className="kpi-icon-badge">
+                  <i className="fa fa-users"></i>
+                </div>
+                <div className="kpi-details">
+                  <span className="revenue-kpi-label">ACTIVE CLUB SUBSCRIBERS</span>
+                  <span className="revenue-kpi-num">{statusBreakdown.ACTIVE || 0}</span>
+                  <span className="revenue-kpi-subtext">{totalMembers} Total Members Registered</span>
+                </div>
+              </div>
+
+              <div className="revenue-kpi-item purple">
+                <div className="kpi-icon-badge">
+                  <i className="fa fa-calculator"></i>
+                </div>
+                <div className="kpi-details">
+                  <span className="revenue-kpi-label">AVG. REVENUE / ACTIVE MEMBER</span>
+                  <span className="revenue-kpi-num">
+                    ₹{Math.round(totalRevenue / (statusBreakdown.ACTIVE || 1)).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+                  </span>
+                  <span className="revenue-kpi-subtext">Lifetime Value Index</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Member Status Breakdown Cards */}
           <div className="reports-section-card full-width">
             <h3 className="section-card-title">MEMBER ENGAGEMENT & STATUS OVERVIEW</h3>
@@ -111,7 +182,7 @@ const AdminReports = () => {
                   <tr>
                     <th>Month</th>
                     <th>New Registrations</th>
-                    <th>Collected Revenue</th>
+                    <th>Collected Revenue (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -122,7 +193,7 @@ const AdminReports = () => {
                         <span className="stat-pill blue">+{trend.new_members} Members</span>
                       </td>
                       <td>
-                        <span className="stat-pill green">${trend.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        <span className="stat-pill green">₹{Number(trend.revenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}</span>
                       </td>
                     </tr>
                   ))}
@@ -140,7 +211,7 @@ const AdminReports = () => {
                   <tr>
                     <th>Plan Name</th>
                     <th>Subscribers</th>
-                    <th>Revenue Potential</th>
+                    <th>Revenue Potential (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -148,13 +219,42 @@ const AdminReports = () => {
                     <tr key={idx}>
                       <td><strong>{plan.name}</strong></td>
                       <td>{plan.count} Members</td>
-                      <td>${plan.revenue_potential.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                      <td style={{ color: '#22c55e', fontWeight: 'bold' }}>
+                        ₹{Number(plan.revenue_potential || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
+
+          {/* Revenue by Payment Method */}
+          {revenueByMethod.length > 0 && (
+            <div className="reports-section-card full-width">
+              <h3 className="section-card-title">
+                <i className="fa fa-credit-card" style={{ color: '#f36100', marginRight: '8px' }}></i>
+                REVENUE BY PAYMENT METHOD (INR ₹)
+              </h3>
+              <div className="payment-methods-grid">
+                {revenueByMethod.map((item, idx) => (
+                  <div key={idx} className="payment-method-card">
+                    <div className="method-icon-wrap">
+                      <i className={
+                        item.method.includes('UPI') ? 'fa fa-mobile' :
+                        item.method.includes('Credit') || item.method.includes('Debit') ? 'fa fa-credit-card' :
+                        item.method.includes('Cash') ? 'fa fa-money' : 'fa fa-bank'
+                      }></i>
+                    </div>
+                    <div className="method-info">
+                      <span className="method-name">{item.method}</span>
+                      <span className="method-amount">₹{Number(item.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Class Popularity & Timetable Load */}
           <div className="reports-section-card full-width">

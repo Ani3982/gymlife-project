@@ -336,7 +336,7 @@ const AdminTimetable = () => {
       {/* Add / Edit Schedule Modal */}
       {showModal && (
         <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="admin-modal-dialog" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal-dialog modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <div>
                 <h3 className="modal-title">{modalMode === 'add' ? 'ADD SCHEDULE SLOT' : 'EDIT SCHEDULE SLOT'}</h3>

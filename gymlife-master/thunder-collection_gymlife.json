@@ -1,0 +1,580 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "GymLife REST API",
+  "collectionId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+  "dateExported": "2026-09-09T07:30:00.000Z",
+  "version": "1.2",
+  "folders": [
+    {
+      "_id": "fld_public",
+      "name": "1. Public & Athlete APIs",
+      "containerId": "",
+      "created": "2026-09-09T07:30:00.000Z",
+      "sortNum": 10000
+    },
+    {
+      "_id": "fld_auth",
+      "name": "2. Authentication & Member Portal",
+      "containerId": "",
+      "created": "2026-09-09T07:30:00.000Z",
+      "sortNum": 20000
+    },
+    {
+      "_id": "fld_admin_auth",
+      "name": "3. Admin Authentication & Core",
+      "containerId": "",
+      "created": "2026-09-09T07:30:00.000Z",
+      "sortNum": 30000
+    },
+    {
+      "_id": "fld_admin_mgmt",
+      "name": "4. Admin Operations & Management",
+      "containerId": "",
+      "created": "2026-09-09T07:30:00.000Z",
+      "sortNum": 40000
+    },
+    {
+      "_id": "fld_admin_notifications",
+      "name": "5. Notifications & Brevo SMTP Logs",
+      "containerId": "",
+      "created": "2026-09-09T07:30:00.000Z",
+      "sortNum": 50000
+    }
+  ],
+  "requests": [
+    {
+      "_id": "req_root_health",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "API Root / Health Check",
+      "url": "{{baseUrl}}/",
+      "method": "GET",
+      "sortNum": 10000,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_pricing_plans",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "Get Pricing Plans",
+      "url": "{{baseUrl}}/api/pricing-plans/",
+      "method": "GET",
+      "sortNum": 10100,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_trainers",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "Get Trainers List",
+      "url": "{{baseUrl}}/api/trainers/",
+      "method": "GET",
+      "sortNum": 10200,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_classes",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "Get Classes Catalog",
+      "url": "{{baseUrl}}/api/classes/",
+      "method": "GET",
+      "sortNum": 10300,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_services",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "Get Gym Services",
+      "url": "{{baseUrl}}/api/services/",
+      "method": "GET",
+      "sortNum": 10400,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_timetable",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "Get Class Timetable / Schedule",
+      "url": "{{baseUrl}}/api/timetable/",
+      "method": "GET",
+      "sortNum": 10500,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_gallery",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "Get Photo Gallery",
+      "url": "{{baseUrl}}/api/gallery/",
+      "method": "GET",
+      "sortNum": 10600,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_blogs",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "Get Fitness Blogs",
+      "url": "{{baseUrl}}/api/blogs/",
+      "method": "GET",
+      "sortNum": 10700,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_contact_info",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "Get Gym Contact Info & Socials",
+      "url": "{{baseUrl}}/api/contact-info/",
+      "method": "GET",
+      "sortNum": 10800,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_submit_contact",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "Submit Contact Message",
+      "url": "{{baseUrl}}/api/contact/",
+      "method": "POST",
+      "sortNum": 10900,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Alex Mercer\",\n  \"email\": \"alex.mercer@example.com\",\n  \"phone\": \"+1 (555) 234-5678\",\n  \"message\": \"I would like to inquire about personal training packages.\"\n}"
+      },
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_create_booking",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_public",
+      "name": "Book Class / Appointment",
+      "url": "{{baseUrl}}/api/bookings/",
+      "method": "POST",
+      "sortNum": 11000,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"johndoe@example.com\",\n  \"phone\": \"9876543210\",\n  \"service_name\": \"CrossFit Power Hour\",\n  \"preferred_date\": \"2026-09-15\",\n  \"preferred_time\": \"08:00 AM\",\n  \"notes\": \"First time booking a session.\"\n}"
+      },
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_auth_register",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_auth",
+      "name": "Register New Member / Athlete",
+      "url": "{{baseUrl}}/api/auth/register/",
+      "method": "POST",
+      "sortNum": 20100,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"first_name\": \"David\",\n  \"last_name\": \"Miller\",\n  \"email\": \"david.miller@example.com\",\n  \"phone\": \"+1 (555) 345-6789\",\n  \"password\": \"Password123!\"\n}"
+      },
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_auth_login",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_auth",
+      "name": "Member Login",
+      "url": "{{baseUrl}}/api/auth/login/",
+      "method": "POST",
+      "sortNum": 20200,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"david.miller@example.com\",\n  \"password\": \"Password123!\"\n}"
+      },
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_auth_me",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_auth",
+      "name": "Get Current Logged-in Profile (/me)",
+      "url": "{{baseUrl}}/api/auth/me/",
+      "method": "GET",
+      "sortNum": 20300,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{userToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_member_dashboard",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_auth",
+      "name": "Get Member Dashboard Data",
+      "url": "{{baseUrl}}/api/member/dashboard/",
+      "method": "GET",
+      "sortNum": 20400,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{userToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_login",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_auth",
+      "name": "Admin Login",
+      "url": "{{baseUrl}}/api/admin/login/",
+      "method": "POST",
+      "sortNum": 30100,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+      },
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_dashboard",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_auth",
+      "name": "Admin KPI Dashboard Analytics",
+      "url": "{{baseUrl}}/api/admin/dashboard/",
+      "method": "GET",
+      "sortNum": 30200,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_bookings",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_mgmt",
+      "name": "Admin List Bookings & Appointments",
+      "url": "{{baseUrl}}/api/admin/bookings/",
+      "method": "GET",
+      "sortNum": 40100,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_members",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_mgmt",
+      "name": "Admin List Members Directory",
+      "url": "{{baseUrl}}/api/admin/members/",
+      "method": "GET",
+      "sortNum": 40200,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_trainers",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_mgmt",
+      "name": "Admin List Trainers",
+      "url": "{{baseUrl}}/api/admin/trainers/",
+      "method": "GET",
+      "sortNum": 40300,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_classes",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_mgmt",
+      "name": "Admin List Classes",
+      "url": "{{baseUrl}}/api/admin/classes/",
+      "method": "GET",
+      "sortNum": 40400,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_plans",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_mgmt",
+      "name": "Admin List Pricing Plans",
+      "url": "{{baseUrl}}/api/admin/plans/",
+      "method": "GET",
+      "sortNum": 40500,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_payments",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_mgmt",
+      "name": "Admin List Payments",
+      "url": "{{baseUrl}}/api/admin/payments/",
+      "method": "GET",
+      "sortNum": 40600,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_messages",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_mgmt",
+      "name": "Admin List Contact Inquiries",
+      "url": "{{baseUrl}}/api/admin/messages/",
+      "method": "GET",
+      "sortNum": 40700,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_reports",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_mgmt",
+      "name": "Admin Analytics & Revenue Reports",
+      "url": "{{baseUrl}}/api/admin/reports/",
+      "method": "GET",
+      "sortNum": 40800,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_admin_audit",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_mgmt",
+      "name": "Admin Security Audit Logs",
+      "url": "{{baseUrl}}/api/admin/audit-logs/",
+      "method": "GET",
+      "sortNum": 40900,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_notification_logs",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_notifications",
+      "name": "Get Notification Logs",
+      "url": "{{baseUrl}}/api/admin/notification-logs/",
+      "method": "GET",
+      "sortNum": 50100,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_notification_stats",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_notifications",
+      "name": "Get Notification Delivery Stats",
+      "url": "{{baseUrl}}/api/admin/notification-logs/stats/",
+      "method": "GET",
+      "sortNum": 50200,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_gateway_test",
+      "colId": "c6a1b2c3-8d9e-4f0a-b1c2-d3e4f5a6b7c8",
+      "containerId": "fld_admin_notifications",
+      "name": "Run Brevo SMTP Gateway Test",
+      "url": "{{baseUrl}}/api/admin/gateway-test/",
+      "method": "POST",
+      "sortNum": 50300,
+      "created": "2026-09-09T07:30:00.000Z",
+      "modified": "2026-09-09T07:30:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{adminToken}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"channel\": \"EMAIL\",\n  \"recipient\": \"test.recipient@example.com\"\n}"
+      },
+      "params": [],
+      "tests": []
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "clientName": "Thunder Client",
+  "environmentName": "GymLife Local (Port 8000)",
+  "environmentId": "e7b2c3d4-9e0f-1a2b-3c4d-5e6f7a8b9c0d",
+  "dateExported": "2026-09-09T07:30:00.000Z",
+  "version": "1.1",
+  "variables": [
+    {
+      "name": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "name": "adminToken",
+      "value": "gls_eyJ1aWQiOjIsImV4cCI6MTc4OTA1NDgwMCwiaWF0IjoxNzg4OTY4NDAwfQ.admin_signature"
+    },
+    {
+      "name": "userToken",
+      "value": ""
+    }
+  ]
+}

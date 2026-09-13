@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 const TIME_SLOTS = [
     { label: '06:00 AM - 07:30 AM', time: '06:00 AM', tag: 'Early Bird' },
@@ -16,8 +18,10 @@ const MONTHS = [
     'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-const AppointmentSection = () => {
+const AppointmentSection = ({ defaultService = '' }) => {
     const { showSuccess, showError } = useToast();
+    const { t, language } = useLanguage();
+    const { user } = useAuth();
     const [servicesList, setServicesList] = useState([]);
     
     // Default to tomorrow's date
@@ -45,18 +49,49 @@ const AppointmentSection = () => {
     });
 
     const calendarRef = useRef(null);
+    const ticketRef = useRef(null);
+
+    const [status, setStatus] = useState(null); // 'submitting' | 'success' | 'error'
+    const [confirmationData, setConfirmationData] = useState(null);
+    const [resendingEmail, setResendingEmail] = useState(false);
+    const [resendingSMS, setResendingSMS] = useState(false);
+
+    useEffect(() => {
+        if (status === 'success' && ticketRef.current) {
+            setTimeout(() => {
+                const yOffset = -90;
+                const y = ticketRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+            }, 100);
+        }
+    }, [status]);
 
     const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        service: 'Personal Training Assessment',
+        name: user?.name || user?.username || '',
+        email: user?.email || '',
+        phone: user?.phone || '',
+        service: defaultService || 'Personal Training Assessment',
         appointment_date: '',
         notes: ''
     });
-    
-    const [status, setStatus] = useState(null); // 'submitting' | 'success' | 'error'
-    const [confirmationData, setConfirmationData] = useState(null);
+
+    // Automatically sync logged-in athlete credentials when auth loads
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                name: prev.name || user.name || user.username || '',
+                email: prev.email || user.email || '',
+                phone: prev.phone || user.phone || ''
+            }));
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (defaultService) {
+            setFormData(prev => ({ ...prev, service: defaultService }));
+        }
+    }, [defaultService]);
 
     // Close calendar when clicking outside
     useEffect(() => {
@@ -74,11 +109,13 @@ const AppointmentSection = () => {
             .then(data => {
                 if (data && data.length > 0) {
                     setServicesList(data);
-                    setFormData(prev => ({ ...prev, service: data[0].title }));
+                    if (!defaultService) {
+                        setFormData(prev => ({ ...prev, service: data[0].title }));
+                    }
                 }
             })
             .catch(() => {});
-    }, []);
+    }, [defaultService]);
 
     // Synchronize combined date & time string
     useEffect(() => {
@@ -215,8 +252,99 @@ const AppointmentSection = () => {
         return cells;
     };
 
+    const handleResendEmail = async () => {
+        if (!confirmationData?.reference_no) return;
+        setResendingEmail(true);
+        try {
+            const res = await api.resendBookingEmail(confirmationData.reference_no, confirmationData.email);
+            if (res && res.status === 'success') {
+                showSuccess(`Confirmation email dispatched to ${confirmationData.email}! 📧`);
+                setConfirmationData(prev => ({
+                    ...prev,
+                    email_sent: true,
+                    email_note: 'Delivered via SMTP'
+                }));
+            } else {
+                showError(res?.message || 'Could not resend email. Please verify email address.');
+            }
+        } catch (err) {
+            showError('Network error while resending confirmation email.');
+        } finally {
+            setResendingEmail(false);
+        }
+    };
+
+    const getProperSmsUri = (phone, text) => {
+        const cleanPhone = (phone || '').replace(/[^\d+]/g, '');
+        const encodedBody = encodeURIComponent(text || '');
+        const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent || '');
+        const separator = isIOS ? '&body=' : '?body=';
+        return `sms:${cleanPhone}${separator}${encodedBody}`;
+    };
+
+    const handleResendSMS = async () => {
+        if (!confirmationData?.reference_no) return;
+        setResendingSMS(true);
+        try {
+            const res = await api.resendBookingSMS(confirmationData.reference_no, confirmationData.phone);
+            if (res && res.status === 'success') {
+                showSuccess(`SMS confirmation alert dispatched to ${confirmationData.phone}! 📱`);
+                setConfirmationData(prev => ({
+                    ...prev,
+                    sms_sent: true,
+                    sms_note: res.message || 'Delivered via Fast2SMS/Twilio',
+                    sms_uri: res.sms_uri || prev.sms_uri,
+                    whatsapp_url: res.whatsapp_url || prev.whatsapp_url
+                }));
+            } else {
+                showError(res?.message || 'Carrier SMS service is busy. Tap "Send SMS Text" to send directly.');
+            }
+        } catch (err) {
+            showError('Carrier dispatch unavailable. Tap "Send SMS Text" to send instantly from your device.');
+        } finally {
+            setResendingSMS(false);
+        }
+    };
+
+    const handleSendDirectSMS = () => {
+        if (!confirmationData?.phone) return;
+        const uri = confirmationData.sms_uri || getProperSmsUri(confirmationData.phone, confirmationData.sms_text);
+        window.location.href = uri;
+        showSuccess(`Opening SMS text messenger for ${confirmationData.phone}... 💬`);
+    };
+
+    const handleCopyWhatsAppText = () => {
+        if (!confirmationData) return;
+        const msg = confirmationData.sms_text || `🏋️ GYMLIFE PASS #${confirmationData.reference_no}: Hi ${confirmationData.name}, your ${confirmationData.service} session is confirmed for ${confirmationData.appointment_date}. Location: GymLife Arena. Helpline: +1 125-711-811`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(msg);
+        }
+        showSuccess('Confirmation pass copied to clipboard! 📋');
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const cleanName = (formData.name || '').trim();
+        const cleanEmail = (formData.email || '').trim();
+        const cleanPhone = (formData.phone || '').trim();
+
+        if (!cleanName) {
+            showError('Please enter your full name.');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+            showError('Please provide a valid email address so we can deliver your booking pass.');
+            return;
+        }
+
+        if (!cleanPhone) {
+            showError('Please enter your contact phone number.');
+            return;
+        }
+
         if (!selectedDate) {
             showError('Please select your preferred appointment date.');
             return;
@@ -228,38 +356,63 @@ const AppointmentSection = () => {
         setStatus('submitting');
         
         try {
-            const data = await api.createBooking(formData);
+            const payload = {
+                name: cleanName,
+                email: cleanEmail,
+                phone: cleanPhone,
+                service: formData.service || 'Personal Training Assessment',
+                scheduled_time: formData.appointment_date,
+                appointment_date: formData.appointment_date,
+                notes: (formData.notes || '').trim()
+            };
+
+            const data = await api.createBooking(payload);
             if (data && data.status === 'success') {
 
                 const ref = data.reference_no || `GYM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-                const cleanPhone = (formData.phone || '').replace(/\D/g, '');
-                const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-                const defaultSmsText = `🏋️ GYMLIFE BOOKING CONFIRMED!\nRef: #${ref}\nAthlete: ${formData.name}\nSession: ${formData.service}\nDate: ${formData.appointment_date}\nArena: 333 Middle Winchendon Rd\nHelpline: +1 125-711-811`;
+                const cleanDigits = cleanPhone.replace(/\D/g, '');
+                const fullPhone = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
+                const defaultSmsText = `🏋️ GYMLIFE BOOKING CONFIRMED!\nRef: #${ref}\nAthlete: ${cleanName}\nSession: ${payload.service}\nDate: ${formData.appointment_date}\nArena: 333 Middle Winchendon Rd\nHelpline: +1 125-711-811`;
                 
+                const formattedSmsText = data.sms_text || defaultSmsText;
+                const dynamicSmsUri = getProperSmsUri(cleanPhone, formattedSmsText);
+                const dynamicWhatsAppUrl = data.whatsapp_url || `https://api.whatsapp.com/send?phone=${fullPhone}&text=${encodeURIComponent(data.whatsapp_message || formattedSmsText)}`;
+
+                const emailSent = Boolean(data.email_sent || data.notifications?.email?.status === 'SENT');
+
                 setStatus('success');
                 setConfirmationData({
                     reference_no: ref,
-                    name: formData.name,
-                    email: formData.email,
-                    phone: formData.phone,
-                    service: formData.service,
+                    name: cleanName,
+                    email: cleanEmail,
+                    phone: cleanPhone,
+                    phone_target: fullPhone,
+                    service: payload.service,
                     appointment_date: formData.appointment_date,
-                    notes: formData.notes,
-                    email_sent: data.email_sent !== false,
+                    notes: payload.notes,
+                    email_sent: emailSent,
                     sms_sent: data.sms_sent !== false,
-                    email_note: data.email_note || 'Confirmation email dispatched',
-                    sms_note: data.sms_note || 'SMS & WhatsApp dispatch ready',
-                    whatsapp_url: data.whatsapp_url || `https://api.whatsapp.com/send?phone=${fullPhone}&text=${encodeURIComponent(defaultSmsText)}`,
-                    sms_uri: data.sms_uri || `sms:${formData.phone}?body=${encodeURIComponent(defaultSmsText)}`,
-                    sms_text: data.sms_text || defaultSmsText
+                    email_note: data.email_note || (emailSent ? 'Delivered via SMTP' : 'Email dispatched'),
+                    sms_note: data.sms_note || 'SMS & WhatsApp ready',
+                    whatsapp_url: dynamicWhatsAppUrl,
+                    whatsapp_message: data.whatsapp_message || formattedSmsText,
+                    sms_uri: dynamicSmsUri,
+                    sms_text: formattedSmsText
                 });
                 
+                // Prompt / Auto-trigger WhatsApp in background/new tab
+                try {
+                    window.open(dynamicWhatsAppUrl, '_blank', 'noopener,noreferrer');
+                } catch (popupErr) {
+                    console.warn('WhatsApp auto-open popup suppressed:', popupErr);
+                }
+
                 // Real System Push Notification on Mobile / Desktop
                 if (typeof window !== 'undefined' && 'Notification' in window) {
                     if (Notification.permission === 'granted') {
                         try {
                             new Notification('🏋️ GymLife Booking Confirmed!', {
-                                body: `Pass #${ref} for ${formData.name} on ${formData.appointment_date}. Arena: 333 Middle Winchendon Rd.`,
+                                body: `Pass #${ref} for ${cleanName} on ${formData.appointment_date}. Arena: 333 Middle Winchendon Rd.`,
                                 icon: '/img/logo.png',
                             });
                         } catch (err) {}
@@ -268,7 +421,7 @@ const AppointmentSection = () => {
                             if (perm === 'granted') {
                                 try {
                                     new Notification('🏋️ GymLife Booking Confirmed!', {
-                                        body: `Pass #${ref} for ${formData.name} on ${formData.appointment_date}. Arena: 333 Middle Winchendon Rd.`,
+                                        body: `Pass #${ref} for ${cleanName} on ${formData.appointment_date}. Arena: 333 Middle Winchendon Rd.`,
                                         icon: '/img/logo.png',
                                     });
                                 } catch (err) {}
@@ -277,36 +430,15 @@ const AppointmentSection = () => {
                     }
                 }
 
-                showSuccess(`Appointment confirmed! Real notifications dispatched to ${formData.email} and ${formData.phone} 📱📧`);
+                showSuccess(`Session booked! Confirmation sent to WhatsApp (${cleanPhone}) & Email (${cleanEmail}) 🚀`);
             } else {
                 setStatus('error');
-                showError(data?.message || 'Failed to book appointment. Please try again.');
+                showError(data?.message || 'Failed to book appointment. Please check details and try again.');
             }
         } catch (error) {
-            // Fallback client confirmation
-            setStatus('success');
-            const fallbackRef = `GYM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-            const cleanPhone = (formData.phone || '').replace(/\D/g, '');
-            const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-            const defaultSmsText = `🏋️ GYMLIFE BOOKING CONFIRMED!\nRef: #${fallbackRef}\nAthlete: ${formData.name}\nSession: ${formData.service}\nDate: ${formData.appointment_date}\nArena: 333 Middle Winchendon Rd\nHelpline: +1 125-711-811`;
-
-            setConfirmationData({
-                reference_no: fallbackRef,
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                service: formData.service,
-                appointment_date: formData.appointment_date,
-                notes: formData.notes,
-                email_sent: true,
-                sms_sent: true,
-                email_note: 'Delivered to client inbox',
-                sms_note: 'SMS alert sent',
-                whatsapp_url: `https://api.whatsapp.com/send?phone=${fullPhone}&text=${encodeURIComponent(defaultSmsText)}`,
-                sms_uri: `sms:${formData.phone}?body=${encodeURIComponent(defaultSmsText)}`,
-                sms_text: defaultSmsText
-            });
-            showSuccess(`Appointment confirmed! Real notifications dispatched to ${formData.email} and ${formData.phone}`);
+            console.error('Booking submission error:', error);
+            setStatus('error');
+            showError(error?.message || 'Unable to connect to booking server. Please try again.');
         }
     };
 
@@ -347,8 +479,8 @@ const AppointmentSection = () => {
                 <div className="row">
                     <div className="col-lg-12">
                         <div className="section-title text-center">
-                            <span>Get Started</span>
-                            <h2>BOOK YOUR APPOINTMENT</h2>
+                            <span>{t('appointment_title', 'Appointment')}</span>
+                            <h2>{t('appointment_sub', 'BOOK YOUR APPOINTMENT')}</h2>
                         </div>
                     </div>
                 </div>
@@ -364,10 +496,10 @@ const AppointmentSection = () => {
                         }}>
                             {status === 'success' && confirmationData ? (
                                 /* Rich Booking Confirmation Ticket */
-                                <div className="appointment-confirmation-ticket">
+                                <div className="appointment-confirmation-ticket" ref={ticketRef}>
                                     <div className="ticket-header">
                                         <div className="ticket-badge-pill">
-                                            <span className="badge-pulse"></span> CONFIRMED & SCHEDULED
+                                            <span className="badge-pulse"></span> {t('CONFIRMED & SCHEDULED', 'CONFIRMED & SCHEDULED')}
                                         </div>
                                         <span className="ticket-ref">REF #{confirmationData.reference_no}</span>
                                     </div>
@@ -375,10 +507,10 @@ const AppointmentSection = () => {
                                     <div className="ticket-body">
                                         <h3 className="ticket-title">
                                             <i className="fa fa-check-circle text-success mr-2"></i> 
-                                            Session Booked Successfully!
+                                            {t('session_booked_success', 'Session Booked Successfully!')}
                                         </h3>
                                         <p className="ticket-subtitle">
-                                            Thank you, <strong>{confirmationData.name}</strong>. Your training appointment has been recorded and dispatched in real time.
+                                            {t('thank_you_booking', 'Your training appointment has been recorded and dispatched in real time.')}
                                         </p>
 
                                         {/* Prominent WhatsApp Instant Mobile Delivery Card */}
@@ -388,18 +520,45 @@ const AppointmentSection = () => {
                                                     <i className="fa fa-whatsapp"></i>
                                                 </div>
                                                 <div className="wa-banner-info">
-                                                    <strong>Deliver Pass to Mobile WhatsApp</strong>
-                                                    <span>Tap to send instant confirmation message to <strong>{confirmationData.phone}</strong></span>
+                                                    <strong>{t('Deliver Pass to Mobile WhatsApp', 'Deliver Pass to Mobile WhatsApp')}</strong>
+                                                    <span>{t('send_to_whatsapp', 'Send to WhatsApp')} <strong>{confirmationData.phone}</strong></span>
                                                 </div>
                                             </div>
-                                            <a 
-                                                href={confirmationData.whatsapp_url} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer" 
-                                                className="wa-banner-btn"
-                                            >
-                                                <i className="fa fa-paper-plane"></i> Send to WhatsApp
-                                            </a>
+                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                                <a 
+                                                    href={confirmationData.whatsapp_url} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    className="wa-banner-btn"
+                                                    id="btn-open-whatsapp"
+                                                    title={`Deliver workout pass to WhatsApp ${confirmationData.phone}`}
+                                                >
+                                                    <i className="fa fa-whatsapp"></i> {t('send_to_whatsapp', 'SEND TO WHATSAPP')}
+                                                </a>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCopyWhatsAppText}
+                                                    style={{
+                                                        background: 'rgba(255, 255, 255, 0.12)',
+                                                        border: '1px solid rgba(37, 211, 102, 0.4)',
+                                                        color: '#ffffff',
+                                                        padding: '9px 14px',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        fontWeight: '700',
+                                                        fontSize: '12px',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        transition: 'all 0.2s ease',
+                                                        textTransform: 'uppercase'
+                                                    }}
+                                                    title="Copy pre-formatted WhatsApp pass to clipboard"
+                                                    id="btn-copy-wa-text"
+                                                >
+                                                    <i className="fa fa-copy"></i> Copy Text
+                                                </button>
+                                            </div>
                                         </div>
 
                                         {/* Real-Life Notifications Dispatched Cards */}
@@ -409,10 +568,37 @@ const AppointmentSection = () => {
                                                     <i className="fa fa-envelope-o"></i>
                                                 </div>
                                                 <div className="notif-text">
-                                                    <strong>Confirmation Email Sent</strong>
-                                                    <span>Delivered to {confirmationData.email}</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                                                        <strong>{t('email_alert_sent', 'Confirmation Email Sent')}</strong>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleResendEmail}
+                                                            disabled={resendingEmail}
+                                                            style={{
+                                                                background: 'rgba(243, 97, 0, 0.15)',
+                                                                border: '1px solid rgba(243, 97, 0, 0.4)',
+                                                                color: '#f36100',
+                                                                fontSize: '11px',
+                                                                fontWeight: '700',
+                                                                borderRadius: '4px',
+                                                                padding: '2px 8px',
+                                                                cursor: resendingEmail ? 'not-allowed' : 'pointer',
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px',
+                                                                transition: 'all 0.2s',
+                                                                lineHeight: '1.2'
+                                                            }}
+                                                            title="Resend email confirmation to this address"
+                                                            id="btn-resend-email"
+                                                        >
+                                                            <i className={`fa fa-repeat ${resendingEmail ? 'fa-spin' : ''}`}></i>
+                                                            {resendingEmail ? 'Sending...' : 'Resend Email'}
+                                                        </button>
+                                                    </div>
+                                                    <span>{confirmationData.email}</span>
                                                 </div>
-                                                <span className="notif-status-tag">Delivered ✓</span>
+                                                <span className="notif-status-tag">{confirmationData.email_sent ? t('delivered_tag', 'Delivered ✓') : 'Dispatched ✓'}</span>
                                             </div>
 
                                             <div className="notif-dispatch-card sms">
@@ -420,10 +606,60 @@ const AppointmentSection = () => {
                                                     <i className="fa fa-commenting-o"></i>
                                                 </div>
                                                 <div className="notif-text">
-                                                    <strong>SMS Booking Alert Sent</strong>
-                                                    <span>Delivered to {confirmationData.phone}</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                                                        <strong>{t('sms_alert_sent', 'SMS Text Booking Alert')}</strong>
+                                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleSendDirectSMS}
+                                                                style={{
+                                                                    background: 'rgba(34, 197, 94, 0.15)',
+                                                                    border: '1px solid rgba(34, 197, 94, 0.4)',
+                                                                    color: '#22c55e',
+                                                                    fontSize: '11px',
+                                                                    fontWeight: '700',
+                                                                    borderRadius: '4px',
+                                                                    padding: '2px 8px',
+                                                                    cursor: 'pointer',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px',
+                                                                    lineHeight: '1.2'
+                                                                }}
+                                                                title="Open native SMS messenger on your device"
+                                                                id="btn-open-direct-sms"
+                                                            >
+                                                                <i className="fa fa-paper-plane-o"></i> Send SMS Text
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleResendSMS}
+                                                                disabled={resendingSMS}
+                                                                style={{
+                                                                    background: 'rgba(243, 97, 0, 0.15)',
+                                                                    border: '1px solid rgba(243, 97, 0, 0.4)',
+                                                                    color: '#f36100',
+                                                                    fontSize: '11px',
+                                                                    fontWeight: '700',
+                                                                    borderRadius: '4px',
+                                                                    padding: '2px 8px',
+                                                                    cursor: resendingSMS ? 'not-allowed' : 'pointer',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px',
+                                                                    lineHeight: '1.2'
+                                                                }}
+                                                                title="Resend SMS carrier alert"
+                                                                id="btn-resend-sms"
+                                                            >
+                                                                <i className={`fa fa-repeat ${resendingSMS ? 'fa-spin' : ''}`}></i>
+                                                                {resendingSMS ? 'Sending...' : 'Resend SMS'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <span>{confirmationData.phone}</span>
                                                 </div>
-                                                <span className="notif-status-tag">Delivered ✓</span>
+                                                <span className="notif-status-tag">{confirmationData.sms_sent ? t('delivered_tag', 'Delivered ✓') : 'Ready 📱'}</span>
                                             </div>
                                         </div>
 
@@ -457,22 +693,26 @@ const AppointmentSection = () => {
                                             target="_blank" 
                                             rel="noopener noreferrer" 
                                             className="ticket-msg-btn btn-whatsapp"
-                                            title="Open instant WhatsApp confirmation message"
+                                            title={`Open WhatsApp chat with ${confirmationData.phone}`}
+                                            id="action-send-whatsapp"
                                         >
                                             <i className="fa fa-whatsapp"></i> Send WhatsApp Pass
                                         </a>
-                                        <a 
-                                            href={confirmationData.sms_uri} 
+                                        <button 
+                                            type="button"
+                                            onClick={handleSendDirectSMS}
                                             className="ticket-msg-btn btn-sms"
-                                            title="Open default SMS app on phone"
+                                            title={`Open SMS app with text for ${confirmationData.phone}`}
+                                            id="action-send-sms"
                                         >
-                                            <i className="fa fa-comment"></i> Direct SMS
-                                        </a>
+                                            <i className="fa fa-commenting"></i> Send SMS Text
+                                        </button>
                                         <button 
                                             type="button" 
                                             className="ticket-msg-btn btn-copy"
                                             onClick={handleCopyPass}
                                             title="Copy full booking pass to clipboard"
+                                            id="action-copy-pass"
                                         >
                                             <i className="fa fa-clipboard"></i> Copy Pass
                                         </button>
@@ -485,10 +725,10 @@ const AppointmentSection = () => {
                                             rel="noopener noreferrer" 
                                             className="btn-add-calendar"
                                         >
-                                            <i className="fa fa-calendar-plus-o"></i> Add to Google Calendar
+                                            <i className="fa fa-calendar-plus-o"></i> {t('Add to Google Calendar', 'Add to Google Calendar')}
                                         </a>
                                         <button className="btn-book-another" onClick={handleReset}>
-                                            <i className="fa fa-refresh"></i> Book Another Session
+                                            <i className="fa fa-refresh"></i> {t('book_another', 'Book Another Session')}
                                         </button>
                                     </div>
                                 </div>
@@ -497,43 +737,43 @@ const AppointmentSection = () => {
                                 <form onSubmit={handleSubmit} className="appointment-form">
                                     <div className="row">
                                         <div className="col-md-6 mb-4">
-                                            <label className="field-label">Full Name *</label>
+                                            <label className="field-label">{t('full_name_label', 'Full Name *')}</label>
                                             <input 
                                                 type="text" 
                                                 name="name"
                                                 value={formData.name}
                                                 onChange={handleChange}
-                                                placeholder="e.g. Jordan Lee" 
+                                                placeholder={t('name_placeholder', 'e.g. Jordan Lee')} 
                                                 required 
                                                 style={inputStyle}
                                             />
                                         </div>
                                         <div className="col-md-6 mb-4">
-                                            <label className="field-label">Email Address (for Confirmation) *</label>
+                                            <label className="field-label">{t('email_label_apt', 'Email Address (for Confirmation) *')}</label>
                                             <input 
                                                 type="email" 
                                                 name="email"
                                                 value={formData.email}
                                                 onChange={handleChange}
-                                                placeholder="name@example.com" 
+                                                placeholder={t('email_placeholder', 'name@example.com')} 
                                                 required 
                                                 style={inputStyle}
                                             />
                                         </div>
                                         <div className="col-md-6 mb-4">
-                                            <label className="field-label">Phone Number (for SMS Alert) *</label>
+                                            <label className="field-label">{t('phone_label_apt', 'Phone Number (for SMS Alert) *')}</label>
                                             <input 
                                                 type="tel" 
                                                 name="phone"
                                                 value={formData.phone}
                                                 onChange={handleChange}
-                                                placeholder="+91 98765 43210" 
+                                                placeholder={t('phone_placeholder', '+91 98765 43210')} 
                                                 required 
                                                 style={inputStyle}
                                             />
                                         </div>
                                         <div className="col-md-6 mb-4">
-                                            <label className="field-label">Service / Training Program *</label>
+                                            <label className="field-label">{t('service_label', 'Service / Training Program *')}</label>
                                             <select 
                                                 name="service"
                                                 value={formData.service}
@@ -542,14 +782,14 @@ const AppointmentSection = () => {
                                             >
                                                 {servicesList.length > 0 ? (
                                                     servicesList.map(s => (
-                                                        <option key={s.id} value={s.title}>{s.title}</option>
+                                                        <option key={s.id} value={s.title}>{t(s.title, s.title)}</option>
                                                     ))
                                                 ) : (
                                                     <>
-                                                        <option value="Personal Training Assessment">Personal Training Assessment</option>
-                                                        <option value="Cardio & Weight Loss Circuit">Cardio & Weight Loss Circuit</option>
-                                                        <option value="Power Yoga & Core Flow">Power Yoga & Core Flow</option>
-                                                        <option value="Bodybuilding & Hypertrophy">Bodybuilding & Hypertrophy</option>
+                                                        <option value="Personal Training Assessment">{t('Personal Training Assessment', 'Personal Training Assessment')}</option>
+                                                        <option value="Cardio & Weight Loss Circuit">{t('Cardio & Weight Loss Circuit', 'Cardio & Weight Loss Circuit')}</option>
+                                                        <option value="Power Yoga & Core Flow">{t('Power Yoga & Core Flow', 'Power Yoga & Core Flow')}</option>
+                                                        <option value="Bodybuilding & Hypertrophy">{t('Bodybuilding & Hypertrophy', 'Bodybuilding & Hypertrophy')}</option>
                                                     </>
                                                 )}
                                             </select>
@@ -561,7 +801,7 @@ const AppointmentSection = () => {
                                         <div className="col-md-6 mb-4" ref={calendarRef} style={{ position: 'relative' }}>
                                             <label className="field-label">
                                                 <i className="fa fa-calendar" style={{ color: '#f36100', marginRight: '6px' }}></i>
-                                                Preferred Date *
+                                                {t('preferred_date_label', 'Preferred Date *')}
                                             </label>
                                             
                                             {/* Clickable Date Display Card */}
@@ -579,7 +819,7 @@ const AppointmentSection = () => {
                                                         className="date-selected-text"
                                                         style={{ color: selectedDate ? '#ffffff' : '#8e8e93', fontWeight: selectedDate ? '600' : '400' }}
                                                     >
-                                                        {selectedDate ? formatDateDisplay(selectedDate) : 'Select Date'}
+                                                        {selectedDate ? formatDateDisplay(selectedDate) : t('select_date_prompt', 'Select Date')}
                                                     </span>
                                                 </div>
                                                 <div className="date-box-right">
@@ -616,10 +856,10 @@ const AppointmentSection = () => {
                                                         </button>
                                                     </div>
 
-                                                    {/* Days of Week Header */}
-                                                    <div className="cal-weekdays-row">
+                                                    {/* Day of Week Headers */}
+                                                    <div className="cal-days-grid-header">
                                                         {DAYS_SHORT.map(d => (
-                                                            <div key={d} className="cal-weekday-label">{d}</div>
+                                                            <span key={d} className="cal-day-name">{d}</span>
                                                         ))}
                                                     </div>
 
@@ -628,7 +868,7 @@ const AppointmentSection = () => {
                                                         {renderCalendarDays()}
                                                     </div>
 
-                                                    {/* Calendar Quick Action Presets */}
+                                                    {/* Quick Select Buttons Footer */}
                                                     <div className="cal-dropdown-footer">
                                                         <div className="cal-quick-buttons">
                                                             <button 
@@ -636,21 +876,21 @@ const AppointmentSection = () => {
                                                                 className={`cal-quick-btn ${selectedDate === getTodayStr() ? 'active-quick' : ''}`}
                                                                 onClick={(e) => { e.stopPropagation(); selectQuickDate('today'); }}
                                                             >
-                                                                Today
+                                                                {t('Today', 'Today')}
                                                             </button>
                                                             <button 
                                                                 type="button" 
                                                                 className={`cal-quick-btn ${selectedDate === getTomorrowStr() ? 'active-quick' : ''}`}
                                                                 onClick={(e) => { e.stopPropagation(); selectQuickDate('tomorrow'); }}
                                                             >
-                                                                Tomorrow
+                                                                {t('Tomorrow', 'Tomorrow')}
                                                             </button>
                                                             <button 
                                                                 type="button" 
                                                                 className="cal-quick-btn"
                                                                 onClick={(e) => { e.stopPropagation(); selectQuickDate('next-week'); }}
                                                             >
-                                                                Next Week
+                                                                {t('Next Week', 'Next Week')}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -664,7 +904,7 @@ const AppointmentSection = () => {
                                         <div className="col-md-6 mb-4">
                                             <label className="field-label">
                                                 <i className="fa fa-clock-o" style={{ color: '#f36100', marginRight: '6px' }}></i>
-                                                Preferred Time Slot *
+                                                {t('preferred_time_label', 'Preferred Time Slot *')}
                                             </label>
                                             <div className="gymlife-time-picker-row">
                                                 {!useCustomTime ? (
@@ -684,14 +924,14 @@ const AppointmentSection = () => {
                                                         required
                                                     >
                                                         <option value="" disabled style={{ color: '#8e8e93', background: '#0d0d10' }}>
-                                                            Select Time Slot
+                                                            {t('Select Time Slot', 'Select Time Slot')}
                                                         </option>
                                                         {TIME_SLOTS.map((slot) => (
                                                             <option key={slot.time} value={slot.time} style={{ color: '#ffffff', background: '#151518' }}>
-                                                                {slot.label} ({slot.tag})
+                                                                {slot.label} ({t(slot.tag, slot.tag)})
                                                             </option>
                                                         ))}
-                                                        <option value="CUSTOM" style={{ color: '#ffffff', background: '#151518' }}>-- Specify Custom Time... --</option>
+                                                        <option value="CUSTOM" style={{ color: '#ffffff', background: '#151518' }}>-- {t('Specify Custom Time...', 'Specify Custom Time...')} --</option>
                                                     </select>
                                                 ) : (
                                                     <div 
@@ -711,7 +951,7 @@ const AppointmentSection = () => {
                                                             onClick={() => setUseCustomTime(false)}
                                                             title="Switch back to standard slots"
                                                         >
-                                                            <i className="fa fa-list"></i> Slots
+                                                            <i className="fa fa-list"></i> {t('Slots', 'Slots')}
                                                         </button>
                                                     </div>
                                                 )}
@@ -721,7 +961,7 @@ const AppointmentSection = () => {
                                         {/* Quick Slot Preset Pills */}
                                         <div className="col-md-12 mb-4" style={{ marginTop: '-8px' }}>
                                             <div className="appointment-slot-pills-bar">
-                                                <span className="slot-pills-label">Quick Slots:</span>
+                                                <span className="slot-pills-label">{t('Quick Slots:', 'Quick Slots:')}</span>
                                                 {TIME_SLOTS.map((slot) => (
                                                     <button
                                                         key={slot.time}
@@ -740,7 +980,7 @@ const AppointmentSection = () => {
                                                     className={`slot-preset-pill custom ${useCustomTime ? 'active' : ''}`}
                                                     onClick={() => setUseCustomTime(true)}
                                                 >
-                                                    <i className="fa fa-clock-o"></i> Custom Time
+                                                    <i className="fa fa-clock-o"></i> {t('Custom Time', 'Custom Time')}
                                                 </button>
                                             </div>
 
@@ -748,7 +988,7 @@ const AppointmentSection = () => {
                                             {selectedDate && (selectedTimeSlot || (useCustomTime && customTime)) && (
                                                 <div className="chosen-slot-summary-chip">
                                                     <i className="fa fa-check-circle" style={{ color: '#22c55e', fontSize: '16px' }}></i>
-                                                    <span>Selected Session:</span>
+                                                    <span>{t('Selected Session:', 'Selected Session:')}</span>
                                                     <strong>
                                                         {formatDateDisplay(selectedDate)} • {useCustomTime ? formatTime24to12(customTime) : selectedTimeSlot}
                                                     </strong>
@@ -757,12 +997,12 @@ const AppointmentSection = () => {
                                         </div>
 
                                         <div className="col-md-12 mb-4">
-                                            <label className="field-label">Workout Goals or Notes (Optional)</label>
+                                            <label className="field-label">{t('notes_label_apt', 'Workout Goals or Notes (Optional)')}</label>
                                             <textarea 
                                                 name="notes"
                                                 value={formData.notes}
                                                 onChange={handleChange}
-                                                placeholder="Share your goals, previous injuries, or preferred coach..."
+                                                placeholder={t('notes_placeholder', 'Share your goals, previous injuries, or preferred coach...')}
                                                 style={{...inputStyle, height: '100px', resize: 'none', paddingTop: '12px'}}
                                             ></textarea>
                                         </div>
@@ -775,11 +1015,11 @@ const AppointmentSection = () => {
                                             >
                                                 {status === 'submitting' ? (
                                                     <>
-                                                        <i className="fa fa-spinner fa-spin"></i> Confirming & Dispatching Alerts...
+                                                        <i className="fa fa-spinner fa-spin"></i> {t('booking_submitting', 'Confirming & Dispatching Alerts...')}
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <i className="fa fa-calendar-check-o"></i> Book Session & Send Confirmation
+                                                        <i className="fa fa-calendar-check-o"></i> {t('book_appointment_now', 'Book Session & Send Confirmation')}
                                                     </>
                                                 )}
                                             </button>

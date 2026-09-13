@@ -112,12 +112,12 @@ const AdminDashboard = () => {
 
         <div className="kpi-card accent-green" onClick={() => navigate('/admin/payments')}>
           <div className="kpi-icon-wrap">
-            <i className="fa fa-dollar"></i>
+            <i className="fa fa-inr"></i>
           </div>
           <div className="kpi-info">
             <span className="kpi-label">TOTAL REVENUE</span>
             <h3 className="kpi-value">
-              {loading ? '...' : `$${(kpis.total_revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+              {loading ? '...' : `₹${(kpis.total_revenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`}
             </h3>
             <span className="kpi-subtext">
               {kpis.pending_payments > 0 ? (
@@ -341,7 +341,7 @@ const AdminDashboard = () => {
                         <span className="item-sub-title">{p.payment_id} • {p.payment_method}</span>
                       </div>
                       <div className="recent-item-amount-col">
-                        <span className="payment-amount">${parseFloat(p.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        <span className="payment-amount">₹{parseFloat(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 0 })}</span>
                         <span className="payment-date">{p.payment_date}</span>
                       </div>
                     </div>

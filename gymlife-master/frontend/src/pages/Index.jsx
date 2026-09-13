@@ -1,9 +1,14 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AppointmentSection from '../components/AppointmentSection';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import api from '../utils/api';
+
+const HERO_IMAGES = [
+  '/img/hero/hero-1.jpg',
+  '/img/hero/hero-2.jpg'
+];
 
 const Index = () => {
   const { openAuthModal, isAuthenticated } = useAuth();
@@ -13,6 +18,7 @@ const Index = () => {
   const [gallery, setGallery] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,41 +45,21 @@ const Index = () => {
     fetchData();
   }, []);
 
-  // Re-init hero slider on mount and whenever language changes
+  // Smooth automatic hero background image rotation every 5 seconds
   useEffect(() => {
-    let $slider = null;
-    let timer = setTimeout(() => {
-      if (window.jQuery && window.jQuery.fn.owlCarousel) {
-        const $ = window.jQuery;
-        $slider = $(".hs-slider");
-        if ($slider.length > 0) {
-          if ($slider.data('owl.carousel')) {
-            $slider.owlCarousel('destroy');
-          }
-          $slider.owlCarousel({
-            loop: true,
-            margin: 0,
-            nav: true,
-            items: 1,
-            dots: false,
-            animateOut: 'fadeOut',
-            animateIn: 'fadeIn',
-            navText: ['<i class="fa fa-angle-left"></i>', '<i class="fa fa-angle-right"></i>'],
-            smartSpeed: 1200,
-            autoHeight: false,
-            autoplay: false
-          });
-        }
-      }
-    }, 50);
+    const timer = setInterval(() => {
+      setCurrentHeroIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
-    return () => {
-      clearTimeout(timer);
-      if ($slider && $slider.data('owl.carousel')) {
-        $slider.owlCarousel('destroy');
-      }
-    };
-  }, [language]);
+  const handlePrevHero = () => {
+    setCurrentHeroIndex((prev) => (prev - 1 + HERO_IMAGES.length) % HERO_IMAGES.length);
+  };
+
+  const handleNextHero = () => {
+    setCurrentHeroIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+  };
 
   useEffect(() => {
     let $slider = null;
@@ -149,57 +135,74 @@ const Index = () => {
   return (
     <>
       {/* Hero Section Begin */}
-      <section className="hero-section">
-          <div className="hs-slider owl-carousel" key={`hero-${language}`}>
-              <div className="hs-item set-bg" data-setbg="/img/hero/hero-1.jpg" style={{ backgroundImage: "url('/img/hero/hero-1.jpg')" }}>
-                  <div className="container">
-                      <div className="row">
-                          <div className="col-lg-6 offset-lg-6">
-                              <div className="hi-text">
-                                  <span>{t('hero_shape_body', 'Shape your body & transform your life')}</span>
-                                  <h1>{t('hero_be_strong', 'Be strong training hard')}</h1>
-                                  <div className="hero-btn-group" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                    <button 
-                                      className="primary-btn" 
-                                      onClick={() => openAuthModal('register')}
-                                      style={{ border: 'none', cursor: 'pointer' }}
-                                    >
-                                      {t('claim_free_pass', 'Claim 3-Day Free Pass')}
-                                    </button>
-                                    <Link to="/class-timetable" className="primary-btn" style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
-                                      {t('view_timetable', 'View Timetable')}
-                                    </Link>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
+      <section className="hero-section hero-smooth-wrapper">
+        {/* Background Photo Cross-fade Layers */}
+        <div className="hero-bg-carousel" aria-hidden="true">
+          {HERO_IMAGES.map((imgSrc, idx) => (
+            <div
+              key={imgSrc}
+              className={`hero-bg-slide ${idx === currentHeroIndex ? 'active' : ''}`}
+              style={{ backgroundImage: `url('${imgSrc}')` }}
+            />
+          ))}
+          <div className="hero-bg-overlay" />
+        </div>
+
+        {/* Completely Fixed Foreground Content - Text & Buttons never jump or flicker */}
+        <div className="hero-content-container">
+          <div className="container">
+            <div className="row">
+              <div className="col-lg-6 offset-lg-6">
+                <div className="hi-text stable-hero-text">
+                  <span>{t('hero_shape_body', 'Shape your body')}</span>
+                  <h1>
+                    {t('hero_title_line1', 'Be')}{' '}
+                    <strong>{t('hero_title_strong', 'strong')}</strong>
+                    <br />
+                    {t('hero_title_line2', 'training hard')}
+                  </h1>
+                  <div className="hero-btn-group" style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '20px' }}>
+                    <a href="#appointment-section" className="primary-btn">{t('get_info', 'Get info')}</a>
+                    <Link to="/about-us" className="primary-btn" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)', color: '#ffffff' }}>
+                      {t('more_info', 'More info')}
+                    </Link>
                   </div>
+                </div>
               </div>
-              <div className="hs-item set-bg" data-setbg="/img/hero/hero-2.jpg" style={{ backgroundImage: "url('/img/hero/hero-2.jpg')" }}>
-                  <div className="container">
-                      <div className="row">
-                          <div className="col-lg-6 offset-lg-6">
-                              <div className="hi-text">
-                                  <span>{t('hero_shape_body', 'Shape your body & transform your life')}</span>
-                                  <h1>{t('hero_be_strong', 'Be strong training hard')}</h1>
-                                  <div className="hero-btn-group" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                    <button 
-                                      className="primary-btn" 
-                                      onClick={() => openAuthModal('register')}
-                                      style={{ border: 'none', cursor: 'pointer' }}
-                                    >
-                                      {t('join_gymlife_today', 'Join GymLife Today')}
-                                    </button>
-                                    <Link to="/services" className="primary-btn" style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
-                                      {t('our_services', 'Our Services')}
-                                    </Link>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Manual Smooth Navigation Controls */}
+        <button
+          type="button"
+          className="hero-arrow-nav prev"
+          onClick={handlePrevHero}
+          aria-label="Previous slide"
+        >
+          <i className="fa fa-angle-left" />
+        </button>
+        <button
+          type="button"
+          className="hero-arrow-nav next"
+          onClick={handleNextHero}
+          aria-label="Next slide"
+        >
+          <i className="fa fa-angle-right" />
+        </button>
+
+        {/* Slide Indicators */}
+        <div className="hero-slider-dots">
+          {HERO_IMAGES.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              className={`hero-dot-btn ${idx === currentHeroIndex ? 'active' : ''}`}
+              onClick={() => setCurrentHeroIndex(idx)}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
       </section>
       {/* Hero Section End */}
 
@@ -268,8 +271,8 @@ const Index = () => {
                                       <img src={c.image_url} alt={c.name} />
                                   </div>
                                   <div className="ci-text">
-                                      <span>{c.category ? c.category.toUpperCase() : ''}</span>
-                                      <h5>{c.name}</h5>
+                                      <span>{c.category ? t(c.category, c.category.toUpperCase()) : ''}</span>
+                                      <h5>{t(c.name, c.name)}</h5>
                                       <Link to={`/class-details?id=${c.id}`}><i className="fa fa-angle-right"></i></Link>
                                   </div>
                               </div>
@@ -317,14 +320,14 @@ const Index = () => {
                       pricingPlans.map((plan) => (
                           <div className="col-lg-4 col-md-8" key={plan.id}>
                               <div className="ps-item">
-                                  <h3>{plan.name}</h3>
+                                  <h3>{t(plan.name, plan.name)}</h3>
                                    <div className="pi-price">
                                        <h2>₹ {isNaN(Number(plan.price)) ? plan.price : Number(plan.price).toLocaleString('en-IN')}</h2>
-                                       <span>{plan.period}</span>
+                                       <span>{t(plan.period, plan.period)}</span>
                                    </div>
                                   <ul>
                                       {plan.features && plan.features.map((feature, idx) => (
-                                          <li key={idx}>{feature}</li>
+                                          <li key={idx}>{t(feature, feature)}</li>
                                       ))}
                                   </ul>
                                   <button 
@@ -385,7 +388,7 @@ const Index = () => {
                                   <div className="ts-item set-bg" data-setbg={trainer.image_url} style={{ backgroundImage: `url(${trainer.image_url})` }}>
                                       <div className="ts_text">
                                           <h4>{trainer.name}</h4>
-                                          <span>{trainer.role}</span>
+                                          <span>{t(trainer.role, trainer.role)}</span>
                                       </div>
                                   </div>
                               </div>

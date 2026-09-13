@@ -414,7 +414,7 @@ const AdminMembers = () => {
                       <option value="">-- Select Plan --</option>
                       {plans.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name} (${p.price})
+                          {p.name} (₹{Number(p.price).toLocaleString('en-IN')})
                         </option>
                       ))}
                     </select>
@@ -520,7 +520,7 @@ const AdminMembers = () => {
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Plan</span>
-                  <span className="detail-val">{detailData.plan_name} (${detailData.plan_price})</span>
+                  <span className="detail-val">{detailData.plan_name} (₹{Number(detailData.plan_price || 0).toLocaleString('en-IN')})</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Joined On</span>
@@ -573,7 +573,7 @@ const AdminMembers = () => {
                         {detailData.payments.map((pay) => (
                           <tr key={pay.id}>
                             <td>{pay.payment_id}</td>
-                            <td>${pay.amount}</td>
+                            <td>₹{Number(pay.amount || 0).toLocaleString('en-IN')}</td>
                             <td>{pay.payment_method}</td>
                             <td>{pay.payment_date}</td>
                             <td><span className={`payment-status-tag ${pay.status.toLowerCase()}`}>{pay.status}</span></td>

@@ -30,4 +30,23 @@ Thumbs.db
 *.env
 .env.*
 !.env.example
+*.pem
+*.key
+*.cert
+
+# Firebase Service Account Credentials & Private Keys
+*firebase-adminsdk*.json
+serviceAccountKey*.json
+firebase-credentials.json
+firebase-adminsdk.json
+
+# Databases & Backups (Preserve local dev data, never commit to VCS)
+*.sqlite3
+db.sqlite3
+**/db.sqlite3
+backups/
+**/backups/
+*.dump
+gymlife_backup*.json
+sqlite_dump_backup*.json
 

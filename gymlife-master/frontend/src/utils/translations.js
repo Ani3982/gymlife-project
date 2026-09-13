@@ -1,4 +1,4 @@
-﻿export const translations = {
+export const translations = {
   en: {
     // Navigation
     home: "Home",
@@ -30,16 +30,20 @@
     welcome: "Welcome",
     
     // Hero & Slider
-    hero_shape_body: "Shape your body & transform your life",
+    hero_shape_body: "Shape your body",
     hero_be_strong: "Be strong training hard",
     hero_sub: "SHAPE YOUR BODY",
     hero_title: "BE STRONG TRAIN HARD",
+    hero_title_line1: "Be",
+    hero_title_strong: "strong",
+    hero_title_line2: "training hard",
     hero_desc: "GymLife provides world-class fitness equipment, elite trainers, and customized nutrition plans to transform your strength and health.",
     claim_free_pass: "Claim 3-Day Free Pass",
     view_timetable: "View Timetable",
     join_gymlife_today: "Join GymLife Today",
     our_services: "Our Services",
     get_info: "Get Info",
+    more_info: "More Info",
     explore_classes: "Explore Classes",
     book_session: "Book Training Session",
     
@@ -66,10 +70,35 @@
     personal_training: "1-on-1 Personal Training",
     
     // Banner & CTA
-    registration_banner_title: "REGISTER NOW TO GET EXCLUSIVE DEALS",
-    registration_banner_sub: "WHERE HEALTH, BEAUTY AND PEAK FITNESS MEET",
-    appointment_title: "Get Appointment",
-    appointment_sub: "BOOK YOUR WORKOUT",
+    registration_banner_title: "REGISTRATION NOW TO GET MORE DEALS",
+    registration_banner_sub: "Where health, beauty and fitness meet.",
+    exercise_until_body_obeys: "Exercise until the body obeys.",
+    appointment_title: "Appointment",
+    appointment_sub: "BOOK YOUR APPOINTMENT",
+    
+    // Appointment Form Fields
+    full_name_label: "Full Name *",
+    name_placeholder: "e.g. Jordan Lee",
+    email_label_apt: "Email Address (for Confirmation) *",
+    email_placeholder: "name@example.com",
+    phone_label_apt: "Phone Number (for SMS Alert) *",
+    phone_placeholder: "+91 98765 43210",
+    service_label: "Service / Training Program *",
+    preferred_date_label: "Preferred Date *",
+    preferred_time_label: "Preferred Time Slot *",
+    select_date_prompt: "Select Date",
+    notes_label_apt: "Special Goals / Coaching Notes (Optional)",
+    notes_placeholder: "Tell us about your fitness targets, previous injuries, or preferred trainer...",
+    book_appointment_now: "BOOK APPOINTMENT NOW",
+    booking_submitting: "Securing Your Workout Slot...",
+    session_booked_success: "Session Booked Successfully!",
+    thank_you_booking: "Your training appointment has been recorded and dispatched in real time.",
+    send_to_whatsapp: "Send to WhatsApp",
+    email_alert_sent: "Confirmation Email Sent",
+    sms_alert_sent: "SMS Booking Alert Sent",
+    delivered_tag: "Delivered ✓",
+    book_another: "Book Another Session",
+    view_full_timetable: "View Full Timetable",
     
     // Trainers & Team
     trainer_title: "Our Team",
@@ -164,16 +193,20 @@
     welcome: "स्वागत आहे",
     
     // Hero & Slider
-    hero_shape_body: "शरीराला द्या योग्य आकार आणि जीवन बदला",
-    hero_be_strong: "मजबूत बना आणि कठोर परिश्रम करा",
+    hero_shape_body: "शरीराला द्या योग्य आकार",
+    hero_be_strong: "बना शक्तिशाली, करा कठोर सराव",
     hero_sub: "शरीराला द्या योग्य आकार",
     hero_title: "बना सामर्थ्यवान आणि तंदुरुस्त",
+    hero_title_line1: "बना",
+    hero_title_strong: "शक्तिशाली",
+    hero_title_line2: "करा कठोर सराव",
     hero_desc: "GymLife तुम्हाला जागतिक दर्जाची उपकरणे, प्रमाणित प्रशिक्षक आणि वैयक्तिकृत आहार योजना प्रदान करते.",
     claim_free_pass: "३ दिवसांचा फ्री पास मिळवा",
     view_timetable: "वेळापत्रक पहा",
     join_gymlife_today: "आजच जिमलाईफमध्ये सामील व्हा",
     our_services: "आमच्या सेवा",
-    get_info: "अधिक माहिती मिळवा",
+    get_info: "माहिती मिळवा",
+    more_info: "अधिक माहिती",
     explore_classes: "वर्ग एक्सप्लोर करा",
     book_session: "प्रशिक्षण सत्र बुक करा",
     
@@ -201,9 +234,34 @@
     
     // Banner & CTA
     registration_banner_title: "खास सवलतींसाठी आत्ताच नोंदणी करा",
-    registration_banner_sub: "आरोग्य, सौंदर्य आणि सर्वोच्च फिटनेसचे केंद्र",
-    appointment_title: "अपॉइंटमेंट बुक करा",
-    appointment_sub: "तुमचा वर्कआउट स्लॉट निवडा",
+    registration_banner_sub: "आरोग्य, सौंदर्य आणि सर्वोच्च फिटनेसचे केंद्र.",
+    exercise_until_body_obeys: "शरीर तंदुरुस्त होईपर्यंत नियमित व्यायाम करा.",
+    appointment_title: "अपॉइंटमेंट",
+    appointment_sub: "तुमचा वर्कआउट स्लॉट बुक करा",
+    
+    // Appointment Form Fields
+    full_name_label: "पूर्ण नाव *",
+    name_placeholder: "उदा. अनिकेत शिंदे",
+    email_label_apt: "ईमेल पत्ता (कन्फर्मेशनसाठी) *",
+    email_placeholder: "aniket@example.com",
+    phone_label_apt: "फोन / व्हॉट्सॲप नंबर *",
+    phone_placeholder: "+91 98765 43210",
+    service_label: "प्रशिक्षण कार्यक्रम निवडा *",
+    preferred_date_label: "पसंतीची तारीख *",
+    preferred_time_label: "पसंतीची वेळ निवडा *",
+    select_date_prompt: "तारीख निवडा",
+    notes_label_apt: "विशेष उद्दिष्टे / आरोग्य माहिती (पर्यायी)",
+    notes_placeholder: "तुमची उद्दिष्टे किंवा फिटनेस लक्ष्याबद्दल सांगा...",
+    book_appointment_now: "आत्ताच अपॉइंटमेंट बुक करा",
+    booking_submitting: "तुमचा स्लॉट बुक होत आहे...",
+    session_booked_success: "सत्र यशस्वीरित्या बुक झाले!",
+    thank_you_booking: "तुमची ट्रेनिंग अपॉइंटमेंट नोंदवली गेली आहे आणि मेसेज पाठवला आहे.",
+    send_to_whatsapp: "व्हॉट्सॲपवर पाठवा",
+    email_alert_sent: "कन्फर्मेशन ईमेल पाठवला",
+    sms_alert_sent: "SMS बुकिंग अलर्ट पाठवला",
+    delivered_tag: "पोहोचले ✓",
+    book_another: "दुसरे सत्र बुक करा",
+    view_full_timetable: "संपूर्ण वेळापत्रक पहा",
     
     // Trainers & Team
     trainer_title: "आमची तज्ज्ञ टीम",
@@ -298,16 +356,20 @@
     welcome: "स्वागत है",
     
     // Hero & Slider
-    hero_shape_body: "शरीर को दें सही आकार और बदलें अपनी जिंदगी",
-    hero_be_strong: "मजबूत बनें और कड़ी मेहनत करें",
+    hero_shape_body: "शरीर को दें सही आकार",
+    hero_be_strong: "बनें शक्तिशाली, करें कठिन अभ्यास",
     hero_sub: "शरीर को दें सही आकार",
     hero_title: "मजबूत बनें और कड़ी मेहनत करें",
+    hero_title_line1: "बनें",
+    hero_title_strong: "शक्तिशाली",
+    hero_title_line2: "करें कठिन अभ्यास",
     hero_desc: "GymLife आपको विश्व स्तरीय फिटनेस उपकरण, विशेषज्ञ ट्रेनर और व्यक्तिगत डाइट प्लान प्रदान करता है।",
     claim_free_pass: "3 दिन का फ्री पास पाएं",
     view_timetable: "समय सारिणी देखें",
     join_gymlife_today: "आज ही जिमलाइफ से जुड़ें",
     our_services: "हमारी सेवाएं",
-    get_info: "जानकारी प्राप्त करें",
+    get_info: "जानकारी लें",
+    more_info: "अधिक जानकारी",
     explore_classes: "क्लासेस देखें",
     book_session: "ट्रेनिंग सेशन बुक करें",
     
@@ -335,9 +397,34 @@
     
     // Banner & CTA
     registration_banner_title: "विशेष छूट के लिए अभी पंजीकरण करें",
-    registration_banner_sub: "स्वास्थ्य, सौंदर्य और फिटनेस का संगम",
-    appointment_title: "अपॉइंटमेंट बुक करें",
+    registration_banner_sub: "स्वास्थ्य, सौंदर्य और फिटनेस का संगम।",
+    exercise_until_body_obeys: "शरीर फिट होने तक नियमित व्यायाम करें।",
+    appointment_title: "अपॉइंटमेंट",
     appointment_sub: "अपना वर्कआउट स्लॉट बुक करें",
+    
+    // Appointment Form Fields
+    full_name_label: "पूरा नाम *",
+    name_placeholder: "उदा. अनिकेत शिंदे",
+    email_label_apt: "ईमेल पता (पुष्टि के लिए) *",
+    email_placeholder: "aniket@example.com",
+    phone_label_apt: "फ़ोन / व्हाट्सएप नंबर *",
+    phone_placeholder: "+91 98765 43210",
+    service_label: "ट्रेनिंग प्रोग्राम चुनें *",
+    preferred_date_label: "पसंदीदा तारीख *",
+    preferred_time_label: "पसंदीदा समय चुनें *",
+    select_date_prompt: "तारीख चुनें",
+    notes_label_apt: "विशेष लक्ष्य / स्वास्थ्य विवरण (वैकल्पिक)",
+    notes_placeholder: "अपने फिटनेस लक्ष्यों या स्वास्थ्य के बारे में बताएं...",
+    book_appointment_now: "अभी अपॉइंटमेंट बुक करें",
+    booking_submitting: "आपका स्लॉट बुक हो रहा है...",
+    session_booked_success: "सेशन सफलतापूर्वक बुक हुआ!",
+    thank_you_booking: "आपकी ट्रेनिंग अपॉइंटमेंट दर्ज कर ली गई है और संदेश भेज दिया गया है।",
+    send_to_whatsapp: "व्हाट्सएप पर भेजें",
+    email_alert_sent: "पुष्टि ईमेल भेजा गया",
+    sms_alert_sent: "SMS बुकिंग अलर्ट भेजा गया",
+    delivered_tag: "सफल ✓",
+    book_another: "दूसरा सेशन बुक करें",
+    view_full_timetable: "पूरी समय सारिणी देखें",
     
     // Trainers & Team
     trainer_title: "हमारी टीम",
@@ -399,5 +486,171 @@
     location_label: "स्थान",
     mon_fri_hours: "सोमवार - शुक्रवार: सुबह 06:00 - रात 10:00",
     sat_sun_hours: "शनिवार - रविवार: सुबह 07:00 - रात 08:00"
+  }
+};
+
+/**
+ * Dynamic Dictionary for database, API, and custom text strings
+ * Used by t() to translate arbitrary strings received dynamically from backend
+ */
+export const dynamicTextTranslations = {
+  mr: {
+    // Pricing Plan Titles & Periods
+    "Class Drop-in Pass": "एक दिवसीय पास",
+    "Class Drop-in": "एक दिवसीय वर्ग",
+    "Class drop-in": "एक दिवसीय वर्ग",
+    "12 Month VIP Membership": "१२ महिने व्हीआयपी मेंबरशिप",
+    "12 Month unlimited": "१२ महिने अमर्यादित",
+    "6 Month Active Membership": "६ महिने ॲक्टिव्ह मेंबरशिप",
+    "6 Month unlimited": "६ महिने अमर्यादित",
+    "SINGLE PASS": "एकच पास",
+    "SINGLE CLASS": "एकच क्लास",
+    "12 MONTHS UNLIMITED": "१२ महिने अमर्यादित",
+    "6 MONTHS ACCESS": "६ महिने प्रवेश",
+    "6 MONTHS UNLIMITED": "६ महिने अमर्यादित",
+    
+    // Pricing Features
+    "Full gym floor access": "संपूर्ण जिम फ्लोअर ॲक्सेस",
+    "Locker & steam room": "लॉकर आणि स्टीम रूम सुविधा",
+    "1 group class included": "१ ग्रुप क्लास समाविष्ट",
+    "Personal trainer intro": "वैयक्तिक ट्रेनर ओळख व मार्गदर्शन",
+    "Free hydration station": "मोफत हायड्रेशन स्टेशन",
+    "Free Wi-Fi access": "मोफत वाय-फाय सुविधा",
+    "24/7 Unlimited club access": "२४/७ अमर्यादित क्लब प्रवेश",
+    "InBody composition scan": "InBody शरीर रचना स्कॅन",
+    "Dedicated personal trainer": "समर्पित वैयक्तिक ट्रेनर",
+    "Unlimited group & spin classes": "अमर्यादित ग्रुप व स्पिन क्लासेस",
+    "2 Monthly guest passes": "दरमहा २ मोफत गेस्ट पासेस",
+    "Sauna & recovery lounge": "सौना आणि रिकव्हरी लाउंज",
+    "Unlimited club access": "अमर्यादित क्लब प्रवेश",
+    "Certified fitness assessment": "प्रमाणित फिटनेस तपासणी",
+    "Nutrition strategy plan": "आहार आणि डाएट योजना",
+    "Group HIIT & yoga classes": "ग्रुप HIIT आणि योग क्लासेस",
+    "Locker & shower amenities": "लॉकर आणि शॉवर सुविधा",
+    "Free guest pass every month": "दरमहा एक मोफत गेस्ट पास",
+    "Free riding": "मोफत सायकलिंग / राइडिंग",
+    "Unlimited equipments": "अमर्यादित आधुनिक साधने",
+    "Personal trainer": "वैयक्तिक ट्रेनर",
+    "Weight losing classes": "वजन कमी करण्याचे वर्ग",
+    "Month to mouth": "महिना ते महिना लवचिकता",
+    "No time restriction": "वेळेचे कोणतेही बंधन नाही",
+
+    // Classes & Categories
+    "Weightlifting": "वेटलिफ्टिंग (स्ट्रेंथ)",
+    "Indoor cycling": "इनडोअर सायकलिंग",
+    "Kettlebell power": "कैटलबेल पॉवर",
+    "Boxing": "बॉक्सिंग आणि मार्शल आर्ट्स",
+    "Body building": "बॉडी बिल्डिंग",
+    "STRENGTH": "स्ट्रेंथ (सामर्थ्य)",
+    "CARDIO": "कार्डिओ",
+    "TRAINING": "प्रशिक्षण",
+    "BODY BUILDING": "बॉडी बिल्डिंग",
+
+    // Services
+    "Modern equipment": "अत्याधुनिक उपकरणे",
+    "Healthy nutrition plan": "पौष्टिक आहार योजना",
+    "Professional training plan": "व्यावसायिक प्रशिक्षण योजना",
+    "Unique to your needs": "तुमच्या गरजांनुसार सानुकूलित",
+    "Personal Training Assessment": "वैयक्तिक प्रशिक्षण चाचणी",
+    "Cardio & Weight Loss Circuit": "कार्डिओ आणि वजन कमी करण्याचे सर्किट",
+    "Power Yoga & Core Flow": "पॉवर योग आणि कोर फ्लो",
+    "Bodybuilding & Hypertrophy": "बॉडीबिल्डिंग आणि मसल गेन",
+
+    // Trainers
+    "Head Strength Coach": "मुख्य स्ट्रेंथ कोच",
+    "Yoga & Mobility Coach": "योग आणि मोबिलिटी कोच",
+    "Cardio & HIIT Coach": "कार्डिओ आणि HIIT कोच",
+    "CrossFit & Boxing Coach": "क्रॉसफिट आणि बॉक्सिंग कोच",
+
+    // Common Phrases
+    "BE STRONG TRAINING HARD": "बना शक्तिशाली, करा कठोर सराव",
+    "Be strong training hard": "बना शक्तिशाली, करा कठोर सराव",
+    "SHAPE YOUR BODY": "शरीराला द्या योग्य आकार",
+    "Shape your body": "शरीराला द्या योग्य आकार",
+    "Get info": "माहिती मिळवा",
+    "More info": "अधिक माहिती",
+    "Enroll now": "आत्ताच प्रवेश घ्या",
+    "Appointment": "अपॉइंटमेंट",
+    "BOOK YOUR APPOINTMENT": "तुमचा वर्कआउट स्लॉट बुक करा"
+  },
+
+  hi: {
+    // Pricing Plan Titles & Periods
+    "Class Drop-in Pass": "एक दिवसीय पास",
+    "Class Drop-in": "एक दिवसीय क्लास",
+    "Class drop-in": "एक दिवसीय क्लास",
+    "12 Month VIP Membership": "12 महीने वीआईपी मेंबरशिप",
+    "12 Month unlimited": "12 महीने असीमित",
+    "6 Month Active Membership": "6 महीने एक्टिव मेंबरशिप",
+    "6 Month unlimited": "6 महीने असीमित",
+    "SINGLE PASS": "सिंगल पास",
+    "SINGLE CLASS": "सिंगल क्लास",
+    "12 MONTHS UNLIMITED": "12 महीने असीमित",
+    "6 MONTHS ACCESS": "6 महीने का प्रवेश",
+    "6 MONTHS UNLIMITED": "6 महीने असीमित",
+    
+    // Pricing Features
+    "Full gym floor access": "पूरे जिम फ्लोर का एक्सेस",
+    "Locker & steam room": "लॉकर और स्टीम रूम सुविधा",
+    "1 group class included": "1 ग्रुप क्लास शामिल",
+    "Personal trainer intro": "पर्सनल ट्रेनर मार्गदर्शन",
+    "Free hydration station": "मुफ्त हाइड्रेशन स्टेशन",
+    "Free Wi-Fi access": "मुफ्त वाई-फाई सुविधा",
+    "24/7 Unlimited club access": "24/7 असीमित क्लब प्रवेश",
+    "InBody composition scan": "InBody शरीर संरचना स्कैन",
+    "Dedicated personal trainer": "समर्पित पर्सनल ट्रेनर",
+    "Unlimited group & spin classes": "असीमित ग्रुप और स्पिन क्लासेस",
+    "2 Monthly guest passes": "हर महीने 2 मुफ्त गेस्ट पास",
+    "Sauna & recovery lounge": "सौना और रिकवरी लाउंज",
+    "Unlimited club access": "असीमित क्लब प्रवेश",
+    "Certified fitness assessment": "प्रमाणित फिटनेस मूल्यांकन",
+    "Nutrition strategy plan": "डाइट और पोषण रणनीति",
+    "Group HIIT & yoga classes": "ग्रुप HIIT और योग क्लासेस",
+    "Locker & shower amenities": "लॉकर और शावर सुविधाएं",
+    "Free guest pass every month": "हर महीने एक मुफ्त गेस्ट पास",
+    "Free riding": "फ्री राइडिंग / साइकिलिंग",
+    "Unlimited equipments": "असीमित आधुनिक उपकरण",
+    "Personal trainer": "पर्सनल ट्रेनर",
+    "Weight losing classes": "वजन घटाने की क्लासेस",
+    "Month to mouth": "मंथ टू मंथ फ्लेक्सिबिलिटी",
+    "No time restriction": "समय का कोई प्रतिबंध नहीं",
+
+    // Classes & Categories
+    "Weightlifting": "वेटलिफ्टिंग (स्ट्रेंथ)",
+    "Indoor cycling": "इनडोर साइकिलिंग",
+    "Kettlebell power": "केटलबेल पावर",
+    "Boxing": "बॉक्सिंग और मार्शल आर्ट्स",
+    "Body building": "बॉडी बिल्डिंग",
+    "STRENGTH": "स्ट्रेंथ",
+    "CARDIO": "कार्डियो",
+    "TRAINING": "प्रशिक्षण",
+    "BODY BUILDING": "बॉडी बिल्डिंग",
+
+    // Services
+    "Modern equipment": "आधुनिक उपकरण",
+    "Healthy nutrition plan": "स्वस्थ पोषण योजना",
+    "Professional training plan": "व्यावसायिक प्रशिक्षण योजना",
+    "Unique to your needs": "आपकी आवश्यकताओं के अनुसार",
+    "Personal Training Assessment": "पर्सनल ट्रेनिंग मूल्यांकन",
+    "Cardio & Weight Loss Circuit": "कार्डियो और वजन घटाने का सर्किट",
+    "Power Yoga & Core Flow": "पावर योग और कोर फ्लो",
+    "Bodybuilding & Hypertrophy": "बॉडीबिल्डिंग और मसल गेन",
+
+    // Trainers
+    "Head Strength Coach": "हेड स्ट्रेंथ कोच",
+    "Yoga & Mobility Coach": "योग और मोबिलिटी कोच",
+    "Cardio & HIIT Coach": "कार्डियो और HIIT कोच",
+    "CrossFit & Boxing Coach": "क्रॉसफिट और बॉक्सिंग कोच",
+
+    // Common Phrases
+    "BE STRONG TRAINING HARD": "बनें शक्तिशाली, करें कठिन अभ्यास",
+    "Be strong training hard": "बनें शक्तिशाली, करें कठिन अभ्यास",
+    "SHAPE YOUR BODY": "शरीर को दें सही आकार",
+    "Shape your body": "शरीर को दें सही आकार",
+    "Get info": "जानकारी लें",
+    "More info": "अधिक जानकारी",
+    "Enroll now": "अभी नामांकन करें",
+    "Appointment": "अपॉइंटमेंट",
+    "BOOK YOUR APPOINTMENT": "अपना वर्कआउट स्लॉट बुक करें"
   }
 };

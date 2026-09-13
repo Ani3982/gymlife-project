@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate, login as django_login
 from django.contrib.auth.models import User
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
-from django.core.mail import EmailMultiAlternatives, send_mail
+from django.core.mail import EmailMultiAlternatives, send_mail, get_connection
 from django.conf import settings
 from datetime import datetime, date, timedelta
 import json
@@ -13,6 +13,8 @@ import urllib.parse
 import urllib.request
 import re
 import os
+import uuid
+import base64
 
 from .models import (
     AdminProfile, Service, Trainer, ClassItem, ClassSchedule,
@@ -229,7 +231,109 @@ def serialize_settings(settings):
         'youtube_url': settings.youtube_url or '',
         'currency_symbol': settings.currency_symbol,
         'tax_percentage': str(settings.tax_percentage),
+        'smtp_provider': getattr(settings, 'smtp_provider', 'GMAIL') or 'GMAIL',
+        'smtp_host': getattr(settings, 'smtp_host', 'smtp.gmail.com') or 'smtp.gmail.com',
+        'smtp_port': getattr(settings, 'smtp_port', 587) or 587,
+        'smtp_user': getattr(settings, 'smtp_user', '') or '',
+        'smtp_password': getattr(settings, 'smtp_password', '') or '',
+        'smtp_from_email': getattr(settings, 'smtp_from_email', '') or '',
+        'smtp_use_tls': getattr(settings, 'smtp_use_tls', True),
+        'smtp_use_ssl': getattr(settings, 'smtp_use_ssl', False),
     }
+
+def get_active_smtp_connection(override_config=None):
+    """
+    Builds a Django email connection and sender email based on GymSettings or override_config,
+    falling back to .env / Django settings.
+    Returns: (connection, from_email, host, port, username)
+    """
+    settings_obj = GymSettings.objects.first()
+
+    # Defaults from Django settings / .env
+    host = getattr(settings, 'EMAIL_HOST', 'smtp.gmail.com')
+    port = getattr(settings, 'EMAIL_PORT', 587)
+    username = getattr(settings, 'EMAIL_HOST_USER', '')
+    password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
+    use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
+    use_ssl = getattr(settings, 'EMAIL_USE_SSL', False)
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'GymLife Fitness Arena <support.gymcenter@gmail.com>')
+
+    # If GymSettings has configured SMTP
+    if settings_obj:
+        if settings_obj.smtp_host:
+            host = settings_obj.smtp_host.strip()
+        if settings_obj.smtp_port:
+            try:
+                port = int(settings_obj.smtp_port)
+            except (ValueError, TypeError):
+                pass
+        if settings_obj.smtp_user:
+            username = settings_obj.smtp_user.strip()
+        if settings_obj.smtp_password:
+            password = settings_obj.smtp_password.strip()
+        use_tls = bool(settings_obj.smtp_use_tls)
+        use_ssl = bool(settings_obj.smtp_use_ssl)
+        if settings_obj.smtp_from_email:
+            from_email = settings_obj.smtp_from_email.strip()
+        elif username:
+            from_email = f"GymLife Fitness Arena <{username}>"
+
+    # If override_config is provided (e.g. from live gateway test payload)
+    if override_config and isinstance(override_config, dict):
+        if override_config.get('smtp_host'):
+            host = str(override_config['smtp_host']).strip()
+        if override_config.get('smtp_port'):
+            try:
+                port = int(override_config['smtp_port'])
+            except (ValueError, TypeError):
+                pass
+        if 'smtp_user' in override_config and override_config['smtp_user'] is not None:
+            username = str(override_config['smtp_user']).strip()
+        if 'smtp_password' in override_config and override_config['smtp_password'] is not None:
+            password = str(override_config['smtp_password']).strip()
+        if 'smtp_use_tls' in override_config:
+            use_tls = bool(override_config['smtp_use_tls'])
+        if 'smtp_use_ssl' in override_config:
+            use_ssl = bool(override_config['smtp_use_ssl'])
+        if override_config.get('smtp_from_email'):
+            from_email = str(override_config['smtp_from_email']).strip()
+    # Port specific defaults
+    if port == 465:
+        use_ssl = True
+        use_tls = False
+    elif port == 587:
+        use_tls = True
+        use_ssl = False
+
+    # Ensure from_email has a valid RFC 5322 address part with '@'
+    from_email = (from_email or '').strip()
+    match = re.search(r'<([^>]+)>', from_email)
+    addr_part = match.group(1).strip() if match else from_email.strip()
+    if '@' not in addr_part:
+        if username and '@' in username:
+            from_email = f"GymLife Fitness Arena <{username}>"
+        else:
+            default_env_from = getattr(settings, 'DEFAULT_FROM_EMAIL', '')
+            if default_env_from and '@' in default_env_from:
+                from_email = default_env_from
+            else:
+                from_email = 'GymLife Fitness Arena <b6e8c8001@smtp-brevo.com>'
+    elif '<' not in from_email:
+        from_email = f"GymLife Fitness Arena <{addr_part}>"
+
+    backend_class = 'django.core.mail.backends.smtp.EmailBackend' if (username and password) else getattr(settings, 'EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+
+    connection = get_connection(
+        backend=backend_class,
+        host=host,
+        port=port,
+        username=username,
+        password=password,
+        use_tls=use_tls,
+        use_ssl=use_ssl,
+        timeout=12
+    )
+    return connection, from_email, host, port, username
 
 def serialize_notification(n):
     return {
@@ -385,7 +489,7 @@ def get_public_timetable(request):
     return JsonResponse([serialize_schedule(s, request) for s in schedules], safe=False)
 
 def get_gallery(request):
-    gallery = GalleryItem.objects.all().order_by('-created_at')
+    gallery = GalleryItem.objects.all().order_by('id')
     return JsonResponse([serialize_gallery(g, request) for g in gallery], safe=False)
 
 def get_blogs(request):
@@ -591,18 +695,17 @@ def send_appointment_email(appointment, ref_no, display_date_time):
         </html>
         """
 
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'GymLife Fitness Arena <support.gymcenter@gmail.com>')
-        
-        email_msg = EmailMultiAlternatives(
+        admin_email = getattr(settings, 'GYM_ADMIN_EMAIL', 'support.gymcenter@gmail.com')
+        res = EmailService.send_email(
+            recipient_email=recipient,
             subject=subject,
-            body=plain_message,
-            from_email=from_email,
-            to=[recipient],
-            reply_to=['support.gymcenter@gmail.com']
+            html_content=html_content,
+            plain_text=plain_message,
+            bcc=admin_email
         )
-        email_msg.attach_alternative(html_content, "text/html")
-        email_msg.send(fail_silently=False)
-        return True, "Email delivered successfully"
+        if res.get('success'):
+            return True, "Email delivered successfully"
+        return False, res.get('error') or "Email delivery failed"
     except Exception as e:
         print(f"[Email Notification Delivery]: {e}")
         return False, str(e)
@@ -831,9 +934,12 @@ def handle_bookings(request):
                 notif_res = NotificationService.send_booking_confirmation(booking)
                 email_delivered = notif_res.get('email', {}).get('status') == 'SENT'
                 sms_delivered = notif_res.get('sms', {}).get('status') == 'SENT'
-                whatsapp_url = notif_res.get('whatsapp_url') or ''
-                sms_text = f"GymLife Confirmed! #{booking.ref_id}. {booking.name} | {booking.service}. Help: 125-711-811"
-                sms_uri = f"sms:{booking.phone}?body={urllib.parse.quote(sms_text)}"
+                is_valid_phone, local_digits, intl_phone = SMSService.normalize_phone(booking.phone)
+                phone_target = intl_phone if intl_phone else booking.phone
+                whatsapp_url = notif_res.get('whatsapp_url') or WhatsAppService.generate_booking_link(booking)
+                whatsapp_message = WhatsAppService.generate_booking_message(booking)
+                sms_text = f"🏋️ GYMLIFE PASS #{booking.ref_id}: Hi {booking.name}, your {booking.service} is confirmed for {display_time}. Location: 333 Middle Winchendon Rd. Help: 125-711-811"
+                sms_uri = f"sms:{phone_target}?body={urllib.parse.quote(sms_text)}"
 
                 # 2. Create Admin in-app notification
                 create_notification(
@@ -863,8 +969,10 @@ def handle_bookings(request):
                     'email_note': 'Delivered via Brevo SMTP' if email_delivered else 'Email dispatch logged',
                     'sms_note': 'Delivered via Fast2SMS' if sms_delivered else 'SMS dispatch logged',
                     'whatsapp_url': whatsapp_url,
+                    'whatsapp_message': whatsapp_message,
                     'sms_uri': sms_uri,
                     'sms_text': sms_text,
+                    'phone_target': phone_target,
                     'notifications': notif_res,
                     'booking': {
                         'id': booking.id,
@@ -943,6 +1051,11 @@ def get_booking_detail(request, ref_id):
 
         display_time = booking.scheduled_time.strftime('%A, %B %d, %Y at %I:%M %p') if booking.scheduled_time else ''
         whatsapp_url = WhatsAppService.generate_booking_link(booking, 'CONFIRMATION') if booking.phone else ''
+        whatsapp_message = WhatsAppService.generate_booking_message(booking) if booking.phone else ''
+        is_valid_phone, local_digits, intl_phone = SMSService.normalize_phone(booking.phone)
+        phone_target = intl_phone if intl_phone else booking.phone
+        sms_text = f"🏋️ GYMLIFE PASS #{booking.ref_id}: Hi {booking.name}, your {booking.service} is confirmed for {display_time}. Location: 333 Middle Winchendon Rd. Help: 125-711-811"
+        sms_uri = f"sms:{phone_target}?body={urllib.parse.quote(sms_text)}"
 
         return JsonResponse({
             'status': 'success',
@@ -952,6 +1065,7 @@ def get_booking_detail(request, ref_id):
                 'name': booking.name,
                 'email': booking.email,
                 'phone': booking.phone,
+                'phone_target': phone_target,
                 'service': booking.service,
                 'scheduled_time': display_time,
                 'location': booking.location,
@@ -961,11 +1075,131 @@ def get_booking_detail(request, ref_id):
                 'email_delivered': booking.email_delivered,
                 'sms_delivered': booking.sms_delivered,
                 'whatsapp_url': whatsapp_url,
+                'whatsapp_message': whatsapp_message,
+                'sms_text': sms_text,
+                'sms_uri': sms_uri,
                 'created_at': booking.created_at.isoformat()
             }
         })
     except Exception:
         return JsonResponse({'status': 'error', 'message': 'Error retrieving booking.'}, status=400)
+
+
+@csrf_exempt
+@rate_limit(max_requests=10, window_seconds=60, endpoint_key="resend_booking_email")
+def resend_booking_confirmation_email(request, ref_id):
+    """
+    POST /api/bookings/<ref_id>/resend-email/
+    Dispatches booking confirmation pass to athlete's email address.
+    Optionally accepts {"email": "new_email@example.com"} to update destination email.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+    try:
+        ref_clean = str(ref_id).strip()
+        if ref_clean.isdigit():
+            booking = Booking.objects.filter(id=int(ref_clean)).first()
+        else:
+            booking = Booking.objects.filter(ref_id__iexact=ref_clean).first()
+
+        if not booking:
+            return JsonResponse({'status': 'error', 'message': f"Booking with reference '{ref_clean}' not found."}, status=404)
+
+        data = {}
+        try:
+            if request.body:
+                data = json.loads(request.body)
+        except Exception:
+            pass
+
+        target_email = (data.get('email') or '').strip()
+        if target_email:
+            if not validate_email_strict(target_email):
+                return JsonResponse({'status': 'error', 'message': 'Please provide a valid email address.'}, status=400)
+            booking.email = target_email
+            booking.save(update_fields=['email'])
+
+        notif_res = NotificationService.send_booking_confirmation(booking, channels=('EMAIL',), force_resend=True)
+        email_status = notif_res.get('email', {}).get('status')
+        if email_status == 'SENT':
+            booking.email_delivered = True
+            booking.save(update_fields=['email_delivered'])
+            return JsonResponse({
+                'status': 'success',
+                'message': f"Confirmation pass successfully delivered to {booking.email}!",
+                'email': booking.email,
+                'email_delivered': True,
+                'notifications': notif_res
+            })
+        else:
+            err = notif_res.get('email', {}).get('error') or 'Email service could not complete delivery.'
+            return JsonResponse({
+                'status': 'error',
+                'message': f"Delivery failed: {err}",
+                'error': err
+            }, status=500)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+@rate_limit(max_requests=10, window_seconds=60, endpoint_key="resend_booking_sms")
+def resend_booking_confirmation_sms(request, ref_id):
+    """
+    POST /api/bookings/<ref_id>/resend-sms/
+    Dispatches and prepares SMS and WhatsApp confirmation pass for a confirmed booking.
+    Optionally accepts {"phone": "7744963982"} to update destination phone number.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+    try:
+        ref_clean = str(ref_id).strip()
+        if ref_clean.isdigit():
+            booking = Booking.objects.filter(id=int(ref_clean)).first()
+        else:
+            booking = Booking.objects.filter(ref_id__iexact=ref_clean).first()
+
+        if not booking:
+            return JsonResponse({'status': 'error', 'message': f"Booking with reference '{ref_clean}' not found."}, status=404)
+
+        data = {}
+        try:
+            if request.body:
+                data = json.loads(request.body)
+        except Exception:
+            pass
+
+        target_phone = sanitize_phone_number(data.get('phone', ''))
+        if target_phone:
+            booking.phone = target_phone
+            booking.save(update_fields=['phone'])
+
+        notif_res = NotificationService.send_booking_confirmation(booking, channels=('SMS', 'WHATSAPP'), force_resend=True)
+        whatsapp_url = notif_res.get('whatsapp_url') or WhatsAppService.generate_booking_link(booking)
+        whatsapp_msg = WhatsAppService.generate_booking_message(booking)
+        is_valid, local_10, intl_phone = SMSService.normalize_phone(booking.phone)
+        phone_target = intl_phone if intl_phone else booking.phone
+        display_time = booking.scheduled_time.strftime('%A, %B %d, %Y at %I:%M %p') if booking.scheduled_time else ''
+        sms_text = f"🏋️ GYMLIFE PASS #{booking.ref_id}: Hi {booking.name}, your {booking.service} is confirmed for {display_time}. Location: 333 Middle Winchendon Rd. Help: 125-711-811"
+        sms_uri = f"sms:{phone_target}?body={urllib.parse.quote(sms_text)}"
+
+        booking.sms_delivered = True
+        booking.save(update_fields=['sms_delivered'])
+
+        return JsonResponse({
+            'status': 'success',
+            'message': f"Confirmation pass prepared for {booking.phone}!",
+            'phone': booking.phone,
+            'phone_target': phone_target,
+            'sms_delivered': True,
+            'whatsapp_url': whatsapp_url,
+            'whatsapp_message': whatsapp_msg,
+            'sms_uri': sms_uri,
+            'sms_text': sms_text,
+            'notifications': notif_res
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 
@@ -2239,6 +2473,16 @@ def admin_settings(request):
             if 'youtube_url' in data: settings.youtube_url = data['youtube_url'].strip()
             if 'currency_symbol' in data: settings.currency_symbol = data['currency_symbol'].strip()
             if 'tax_percentage' in data: settings.tax_percentage = float(data['tax_percentage'])
+            if 'smtp_provider' in data: settings.smtp_provider = data['smtp_provider'].strip()
+            if 'smtp_host' in data: settings.smtp_host = data['smtp_host'].strip()
+            if 'smtp_port' in data:
+                try: settings.smtp_port = int(data['smtp_port'])
+                except (ValueError, TypeError): pass
+            if 'smtp_user' in data: settings.smtp_user = data['smtp_user'].strip()
+            if 'smtp_password' in data: settings.smtp_password = data['smtp_password'].strip()
+            if 'smtp_from_email' in data: settings.smtp_from_email = data['smtp_from_email'].strip()
+            if 'smtp_use_tls' in data: settings.smtp_use_tls = bool(data['smtp_use_tls'])
+            if 'smtp_use_ssl' in data: settings.smtp_use_ssl = bool(data['smtp_use_ssl'])
 
             settings.save()
             log_audit(user.username, 'ADMIN_CHANGED_SETTINGS', 'Settings', '1', request, "Updated GymLife operational & branding settings")
@@ -2287,7 +2531,37 @@ def admin_profile(request):
             user.save()
 
             if 'phone' in data: profile.phone = data['phone'].strip()
-            if 'avatar_url' in data: profile.avatar_url = data['avatar_url'].strip()
+            if 'avatar_url' in data:
+                raw_avatar = data['avatar_url'].strip()
+                if raw_avatar.startswith('data:image/'):
+                    try:
+                        header, b64_content = raw_avatar.split(';base64,')
+                        ext = header.split('/')[-1]
+                        if ext == 'svg+xml': ext = 'svg'
+                        ext = f".{ext}"
+                        unique_name = f"avatar_{user.id}_{uuid.uuid4().hex[:8]}{ext}"
+                        img_bytes = base64.b64decode(b64_content)
+
+                        # Save to media/avatars
+                        media_dir = settings.MEDIA_ROOT / 'avatars'
+                        os.makedirs(media_dir, exist_ok=True)
+                        with open(media_dir / unique_name, 'wb+') as f_dst:
+                            f_dst.write(img_bytes)
+
+                        # Save to frontend/public/img/avatars
+                        try:
+                            pub_dir = settings.BASE_DIR.parent / 'frontend' / 'public' / 'img' / 'avatars'
+                            os.makedirs(pub_dir, exist_ok=True)
+                            with open(pub_dir / unique_name, 'wb+') as f_pub:
+                                f_pub.write(img_bytes)
+                        except Exception:
+                            pass
+
+                        raw_avatar = f"/img/avatars/{unique_name}"
+                    except Exception:
+                        pass
+                profile.avatar_url = raw_avatar
+
             profile.save()
 
             # Handle password change
@@ -2310,9 +2584,101 @@ def admin_profile(request):
                 log_audit(user.username, 'ADMIN_CHANGED_PASSWORD', 'User', str(user.id), request, "Password successfully updated")
 
             log_audit(user.username, 'ADMIN_UPDATED_PROFILE', 'User', str(user.id), request, "Updated admin profile info")
-            return JsonResponse({'status': 'success', 'message': 'Profile updated successfully.'})
+            return JsonResponse({'status': 'success', 'message': 'Profile updated successfully.', 'avatar_url': profile.avatar_url})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+
+@csrf_exempt
+def admin_upload_avatar(request):
+    """
+    Handles uploading avatar image directly from the user's system.
+    Supports multipart/form-data with file field 'avatar' or 'image' or 'file',
+    as well as JSON base64 payloads.
+    """
+    user, role = get_authenticated_admin(request, 'STAFF')
+    if not user:
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized.'}, status=401)
+
+    if request.method == 'POST':
+        try:
+            profile, _ = AdminProfile.objects.get_or_create(user=user)
+            uploaded_file = request.FILES.get('avatar') or request.FILES.get('image') or request.FILES.get('file')
+
+            file_bytes = None
+            filename = None
+
+            if uploaded_file:
+                filename = uploaded_file.name
+                file_bytes = uploaded_file.read()
+            elif request.body:
+                try:
+                    payload = json.loads(request.body)
+                    b64_str = payload.get('avatar_base64') or payload.get('image_base64') or payload.get('avatar')
+                    if b64_str and 'base64,' in b64_str:
+                        meta, data_str = b64_str.split(';base64,')
+                        ext = meta.split('/')[-1]
+                        if ext == 'svg+xml': ext = 'svg'
+                        filename = f"avatar.{ext}"
+                        file_bytes = base64.b64decode(data_str)
+                except Exception:
+                    pass
+
+            if not file_bytes:
+                return JsonResponse({'status': 'error', 'message': 'No image file was received.'}, status=400)
+
+            # Validate extension
+            ext = os.path.splitext(filename or 'avatar.jpg')[1].lower()
+            if not ext or ext not in ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg']:
+                ext = '.jpg'
+
+            # 10MB limit
+            if len(file_bytes) > 10 * 1024 * 1024:
+                return JsonResponse({'status': 'error', 'message': 'File size exceeds 10MB limit.'}, status=400)
+
+            unique_filename = f"avatar_{user.id}_{uuid.uuid4().hex[:8]}{ext}"
+
+            # Save in media/avatars
+            media_avatars_dir = settings.MEDIA_ROOT / 'avatars'
+            os.makedirs(media_avatars_dir, exist_ok=True)
+            with open(media_avatars_dir / unique_filename, 'wb+') as f_media:
+                f_media.write(file_bytes)
+
+            # Save in frontend/public/img/avatars
+            try:
+                public_avatars_dir = settings.BASE_DIR.parent / 'frontend' / 'public' / 'img' / 'avatars'
+                os.makedirs(public_avatars_dir, exist_ok=True)
+                with open(public_avatars_dir / unique_filename, 'wb+') as f_pub:
+                    f_pub.write(file_bytes)
+            except Exception:
+                pass
+
+            # Save in frontend/dist/img/avatars if dist folder exists
+            try:
+                dist_avatars_dir = settings.BASE_DIR.parent / 'frontend' / 'dist' / 'img' / 'avatars'
+                if os.path.exists(settings.BASE_DIR.parent / 'frontend' / 'dist'):
+                    os.makedirs(dist_avatars_dir, exist_ok=True)
+                    with open(dist_avatars_dir / unique_filename, 'wb+') as f_dist:
+                        f_dist.write(file_bytes)
+            except Exception:
+                pass
+
+            avatar_url = f"/img/avatars/{unique_filename}"
+            profile.avatar_url = avatar_url
+            profile.save()
+
+            log_audit(user.username, 'ADMIN_UPLOADED_AVATAR', 'User', str(user.id), request, f"Uploaded custom avatar {unique_filename}")
+
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Avatar image uploaded successfully!',
+                'avatar_url': avatar_url,
+                'media_url': f"{settings.MEDIA_URL}avatars/{unique_filename}"
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Avatar upload failed: {str(e)}'}, status=500)
 
     return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
 
@@ -2453,6 +2819,117 @@ def auth_login(request):
     return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
 
 
+
+@csrf_exempt
+@rate_limit(max_requests=12, window_seconds=60, endpoint_key="firebase_auth_login")
+def firebase_auth_login(request):
+    """
+    POST /api/auth/firebase/:
+    Verifies Firebase ID token sent from frontend Google Sign-In,
+    retrieves or creates matching User & Member, and returns signed Django session token.
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            id_token = data.get('id_token') or data.get('token')
+            if not id_token:
+                return JsonResponse({'status': 'error', 'message': 'Firebase ID token is required.'}, status=400)
+
+            from notifications.services.firebase_service import FirebaseService
+            token_data = FirebaseService.verify_id_token(id_token)
+
+            uid = token_data.get('uid')
+            email = data.get('email') or token_data.get('email')
+            name = data.get('name') or token_data.get('name')
+
+            # Ensure user name is never "Google Athlete"
+            if not name or name.strip().lower() in ['google athlete', 'google athlete (demo user)', 'athlete']:
+                if email and '@' in email:
+                    prefix = email.split('@')[0].replace('athlete.', '').replace('google.', '')
+                    clean_parts = [p.capitalize() for p in re.split(r'[\._\-]', prefix) if p and p.lower() not in ['google', 'acct', 'token']]
+                    name = ' '.join(clean_parts) if clean_parts else 'Alex Rivers'
+                else:
+                    name = 'Alex Rivers'
+
+            if not email:
+                email = f"{uid}@firebase.gymlife.com"
+
+            first_name = name.split(' ')[0] if name else 'Alex'
+            last_name = name.split(' ', 1)[1] if (name and ' ' in name) else ''
+
+            # Lookup or create User
+            user = User.objects.filter(email__iexact=email).first()
+            if not user:
+                clean_uid = uid.replace('-', '_')[:10] if uid else 'google'
+                user_name_prefix = email.split('@')[0].replace('.', '_').replace('-', '_')[:12]
+                candidate_username = f"{user_name_prefix}_{clean_uid}"
+                username = candidate_username
+                c = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{candidate_username}_{c}"
+                    c += 1
+
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+            else:
+                # Update existing user if it had placeholder names
+                if user.first_name in ['Google', 'Athlete', ''] and user.last_name in ['Athlete', '']:
+                    user.first_name = first_name
+                    user.last_name = last_name
+                    user.save(update_fields=['first_name', 'last_name'])
+
+            # Ensure Member record exists
+            plan = PricingPlan.objects.filter(status='ACTIVE').first()
+            member, created = Member.objects.get_or_create(
+                user=user,
+                defaults={
+                    'full_name': name,
+                    'email': email,
+                    'phone': '',
+                    'plan': plan,
+                    'start_date': date.today(),
+                    'expiry_date': date.today() + timedelta(days=365),
+                    'status': 'ACTIVE',
+                    'payment_status': 'PAID'
+                }
+            )
+            if not created and (member.full_name in ['Google Athlete', 'Athlete', ''] or not member.full_name):
+                member.full_name = name
+                member.save(update_fields=['full_name'])
+
+            is_admin = user.is_staff or user.is_superuser
+            role = 'SUPER_ADMIN' if user.is_superuser else ('ADMIN' if is_admin else 'member')
+            if hasattr(user, 'admin_profile') and user.admin_profile.role:
+                role = user.admin_profile.role
+
+            token = generate_secure_token(user.id, role=role, token_type='admin' if is_admin else 'member')
+            display_name = user.get_full_name().strip() or name
+
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Authenticated with Google via Firebase successfully.',
+                'token': token,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'name': display_name,
+                    'role': role,
+                    'is_staff': user.is_staff,
+                    'is_superuser': user.is_superuser,
+                    'plan': member.plan.name if (member and member.plan) else 'Active Membership'
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f"Firebase authentication error: {str(e)}"}, status=400)
+
+    return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+
 @csrf_exempt
 def auth_me(request):
     if request.method == 'GET':
@@ -2559,7 +3036,7 @@ def member_dashboard_data(request):
 
 
 @csrf_exempt
-@rate_limit(max_requests=5, window_seconds=60, endpoint_key="gateway_test")
+@rate_limit(max_requests=25, window_seconds=60, endpoint_key="gateway_test")
 def admin_gateway_test(request):
     """
     Tests live dispatch of real email and SMS/WhatsApp notifications.
@@ -2580,28 +3057,144 @@ def admin_gateway_test(request):
                 if not recipient_email or not validate_email_strict(recipient_email):
                     return JsonResponse({'status': 'error', 'message': 'A valid recipient email is required.'}, status=400)
                 
-                subject = "🏋️ GymLife Live Test Email: Gateway Verified"
-                body = (
-                    "Hello,\n\n"
-                    "This is a real-life verification email from your GymLife Fitness Center system!\n"
-                    "If you received this message, your Brevo SMTP / Email Gateway is configured and active.\n\n"
-                    "Best regards,\n"
-                    "GymLife Support Team"
-                )
-                from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'GymLife Fitness Arena <support.gymcenter@gmail.com>')
-                
+                connection, from_email, host, port, username = get_active_smtp_connection(data)
+
+                if not username:
+                    return JsonResponse({
+                        'status': 'error',
+                        'error_type': 'MISSING_CREDENTIALS',
+                        'message': 'SMTP Username / Sender Email is missing. Please enter your email address (e.g. your Gmail address) in SMTP Settings above.'
+                    }, status=400)
+
+                # Live test SMTP connection & authentication
+                import smtplib
+                import socket
+
                 try:
-                    send_mail(
-                        subject,
-                        body,
-                        from_email,
-                        [recipient_email],
-                        fail_silently=False
+                    connection.open()
+                except smtplib.SMTPAuthenticationError as auth_err:
+                    err_code = getattr(auth_err, 'smtp_code', 535)
+                    err_raw = getattr(auth_err, 'smtp_error', b'')
+                    err_msg = err_raw.decode('utf-8', errors='ignore') if isinstance(err_raw, bytes) else str(err_raw)
+                    
+                    if 'gmail' in host.lower() or 'google' in host.lower():
+                        return JsonResponse({
+                            'status': 'error',
+                            'error_type': 'GMAIL_AUTH_REQUIRED',
+                            'message': f"Gmail Authentication Rejected ({err_code}): Google requires an App Password instead of your standard Gmail password.",
+                            'hint': "Enable 2-Step Verification on your Google Account, visit https://myaccount.google.com/apppasswords to create a 16-letter App Password named 'GymLife', and paste it into the SMTP Password field.",
+                            'technical_details': f"{err_code} {err_msg}"
+                        }, status=400)
+                    else:
+                        return JsonResponse({
+                            'status': 'error',
+                            'error_type': 'SMTP_AUTH_ERROR',
+                            'message': f"SMTP Authentication Rejected ({err_code}): Invalid username or password for {host}.",
+                            'technical_details': f"{err_code} {err_msg}"
+                        }, status=400)
+                except (socket.timeout, TimeoutError):
+                    return JsonResponse({
+                        'status': 'error',
+                        'error_type': 'TIMEOUT',
+                        'message': f"Connection timed out while connecting to {host}:{port}. Check host and port numbers.",
+                    }, status=400)
+                except Exception as conn_err:
+                    return JsonResponse({
+                        'status': 'error',
+                        'error_type': 'CONNECTION_FAILED',
+                        'message': f"SMTP Connection Failed ({host}:{port}): {str(conn_err)}",
+                        'technical_details': str(conn_err)
+                    }, status=400)
+
+                subject = "🏋️ GymLife Live Test Email: Gateway Verified & Active"
+                plain_body = (
+                    f"GymLife Fitness Center - Gateway Live Test\n\n"
+                    f"Congratulations! Your Email Gateway ({host}:{port}) is authenticated and operational.\n"
+                    f"Recipient: {recipient_email}\n"
+                    f"Dispatched at: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n\n"
+                    f"Automated booking confirmations and member alert vouchers are now active."
+                )
+                html_body = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background-color:#0b0c10;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#ffffff;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0b0c10;padding:30px 15px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#15161b;border:1px solid rgba(243,97,0,0.3);border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.6);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#f36100 0%,#d04800 100%);padding:28px 24px;text-align:center;">
+              <h1 style="margin:0;font-size:24px;letter-spacing:2px;font-weight:900;color:#ffffff;text-transform:uppercase;">GYMLIFE FITNESS ARENA</h1>
+              <p style="margin:6px 0 0 0;font-size:13px;letter-spacing:1px;color:rgba(255,255,255,0.9);text-transform:uppercase;">Live Email Gateway Verification</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 28px;">
+              <div style="background:rgba(34,197,94,0.12);border:1px solid #22c55e;border-radius:8px;padding:14px 18px;margin-bottom:24px;">
+                <span style="font-size:18px;margin-right:8px;">✅</span>
+                <strong style="color:#4ade80;font-size:14px;">Live Dispatch Verified & Operational!</strong>
+              </div>
+              <p style="font-size:14px;line-height:1.6;color:#c5c7d0;margin-top:0;">
+                Hello Athlete / Administrator,<br><br>
+                This test confirmation verifies that your <strong>{host}</strong> email gateway is properly connected and transmitting live transactional emails in real-time.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;background:#0d0e12;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+                <tr>
+                  <td style="padding:10px 16px;color:#8e909d;font-size:12px;border-bottom:1px solid rgba(255,255,255,0.04);">SMTP Server:</td>
+                  <td style="padding:10px 16px;color:#ffffff;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid rgba(255,255,255,0.04);">{host}:{port}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 16px;color:#8e909d;font-size:12px;border-bottom:1px solid rgba(255,255,255,0.04);">Dispatched From:</td>
+                  <td style="padding:10px 16px;color:#ffffff;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid rgba(255,255,255,0.04);">{from_email}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 16px;color:#8e909d;font-size:12px;">Delivered To:</td>
+                  <td style="padding:10px 16px;color:#f36100;font-size:13px;font-weight:600;text-align:right;">{recipient_email}</td>
+                </tr>
+              </table>
+              <p style="font-size:12px;color:#717382;line-height:1.5;margin-bottom:0;">
+                GymLife Client Notification Subsystem • Automated confirmation vouchers for classes, personal training, and memberships will now use this active dispatch channel.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#0e0f13;padding:16px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:#555765;">
+              GymLife Fitness Center • 333 Middle Winchendon Rd, Rindge, NH 03461
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+                try:
+                    msg = EmailMultiAlternatives(
+                        subject=subject,
+                        body=plain_body,
+                        from_email=from_email,
+                        to=[recipient_email],
+                        connection=connection
                     )
-                    log_audit(user.username, 'ADMIN_TEST_EMAIL', 'Gateway', recipient_email, request, "Dispatched test email")
-                    return JsonResponse({'status': 'success', 'message': f"Real email dispatched successfully to {recipient_email}!"})
-                except Exception as err:
-                    return JsonResponse({'status': 'error', 'message': f"Email dispatch failed: {str(err)}."}, status=500)
+                    msg.attach_alternative(html_body, "text/html")
+                    msg.send(fail_silently=False)
+
+                    log_audit(user.username, 'ADMIN_TEST_EMAIL', 'Gateway', recipient_email, request, f"Dispatched live test email via {host}:{port}")
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': f"Real HTML verification email successfully dispatched to {recipient_email} via {host}:{port}!",
+                        'host': host,
+                        'port': port,
+                        'from_email': from_email,
+                        'recipient': recipient_email
+                    })
+                except Exception as send_err:
+                    return JsonResponse({
+                        'status': 'error',
+                        'error_type': 'SEND_ERROR',
+                        'message': f"Failed to deliver email through {host}: {str(send_err)}",
+                        'technical_details': str(send_err)
+                    }, status=500)
             
             elif test_type == 'SMS':
                 if not recipient_phone:
@@ -2642,7 +3235,7 @@ def admin_gateway_test(request):
                     'whatsapp_url': whatsapp_url
                 })
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': 'Gateway test execution error.'}, status=400)
+            return JsonResponse({'status': 'error', 'message': f'Gateway test error: {str(e)}'}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
 
 

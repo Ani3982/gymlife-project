@@ -78,11 +78,11 @@ const DEFAULT_GALLERY = [
 ];
 
 const DEFAULT_CLASSES = [
-  { id: 1, name: 'WEIGHT LIFTING', category: 'STRENGTH', duration: '60 mins', image_url: '/img/classes/class-1.jpg', trainer_name: 'John Smith' },
-  { id: 2, name: 'INDOOR CYCLING', category: 'CARDIO', duration: '45 mins', image_url: '/img/classes/class-2.jpg', trainer_name: 'Mike Davis' },
-  { id: 3, name: 'KETTLEBELL POWER', category: 'STRENGTH', duration: '50 mins', image_url: '/img/classes/class-3.jpg', trainer_name: 'Emma Wilson' },
-  { id: 4, name: 'YOGA & MEDITATION', category: 'YOGA', duration: '45 mins', image_url: '/img/classes/class-4.jpg', trainer_name: 'Sarah Johnson' },
-  { id: 5, name: 'BOXING & CORE', category: 'BOXING', duration: '60 mins', image_url: '/img/classes/class-5.jpg', trainer_name: 'Emma Wilson' },
+  { id: 1, name: 'Weightlifting', category: 'STRENGTH', duration: '60 mins', image_url: '/img/classes/class-1.jpg', trainer_name: 'John Smith' },
+  { id: 2, name: 'Indoor cycling', category: 'CARDIO', duration: '45 mins', image_url: '/img/classes/class-2.jpg', trainer_name: 'Mike Davis' },
+  { id: 3, name: 'Kettlebell power', category: 'STRENGTH', duration: '50 mins', image_url: '/img/classes/class-3.jpg', trainer_name: 'Emma Wilson' },
+  { id: 4, name: 'Boxing', category: 'TRAINING', duration: '60 mins', image_url: '/img/classes/class-4.jpg', trainer_name: 'Sarah Johnson' },
+  { id: 5, name: 'Body building', category: 'BODY BUILDING', duration: '60 mins', image_url: '/img/classes/class-5.jpg', trainer_name: 'Emma Wilson' },
 ];
 
 const DEFAULT_TRAINERS = [
@@ -256,6 +256,34 @@ export const api = {
     }
   },
 
+  resendBookingEmail: async (refId, email = '') => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/bookings/${encodeURIComponent(refId)}/resend-email/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      return await handleResponse(res);
+    } catch (err) {
+      console.error('Error resending booking confirmation:', err);
+      throw err;
+    }
+  },
+
+  resendBookingSMS: async (refId, phone = '') => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/bookings/${encodeURIComponent(refId)}/resend-sms/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      return await handleResponse(res);
+    } catch (err) {
+      console.error('Error resending booking SMS confirmation:', err);
+      throw err;
+    }
+  },
+
   createAppointment: async (data) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/bookings/`, {
@@ -302,6 +330,15 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
+    });
+    return await handleResponse(res);
+  },
+
+  authFirebase: async (idToken, profileData = {}) => {
+    const res = await fetch(`${API_BASE_URL}/api/auth/firebase/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: idToken, ...profileData }),
     });
     return await handleResponse(res);
   },
@@ -768,13 +805,43 @@ export const api = {
     return await handleResponse(res);
   },
 
-  adminGatewayTest: async (data) => {
-    const res = await fetch(`${API_BASE_URL}/api/admin/gateway-test/`, {
+  adminUploadAvatar: async (formDataOrFile) => {
+    const token = localStorage.getItem('adminToken') || localStorage.getItem('gymlife_token');
+    let body;
+    let headers = {
+      'Authorization': token ? `Bearer ${token}` : ''
+    };
+
+    if (formDataOrFile instanceof FormData) {
+      body = formDataOrFile;
+    } else if (formDataOrFile instanceof File || formDataOrFile instanceof Blob) {
+      body = new FormData();
+      body.append('avatar', formDataOrFile);
+    } else {
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify(formDataOrFile);
+    }
+
+    const res = await fetch(`${API_BASE_URL}/api/admin/upload-avatar/`, {
       method: 'POST',
-      headers: getAdminHeaders(),
-      body: JSON.stringify(data)
+      headers: headers,
+      body: body
     });
     return await handleResponse(res);
+  },
+
+  adminGatewayTest: async (data) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/gateway-test/`, {
+        method: 'POST',
+        headers: getAdminHeaders(),
+        body: JSON.stringify(data)
+      });
+      const result = await res.json().catch(() => ({ status: 'error', message: `Server error (HTTP ${res.status})` }));
+      return result;
+    } catch (err) {
+      return { status: 'error', message: err.message || 'Network request failed' };
+    }
   }
 };
 

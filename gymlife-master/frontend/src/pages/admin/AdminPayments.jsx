@@ -161,7 +161,7 @@ const AdminPayments = () => {
       key: 'amount',
       sortable: true,
       render: (val) => (
-        <span className="payment-amount-bold">${parseFloat(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+        <span className="payment-amount-bold">₹{parseFloat(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}</span>
       )
     },
     {
@@ -229,7 +229,7 @@ const AdminPayments = () => {
       {/* Record Payment Modal */}
       {showModal && (
         <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="admin-modal-dialog" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal-dialog modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <div>
                 <h3 className="modal-title">RECORD NEW PAYMENT</h3>
@@ -270,14 +270,14 @@ const AdminPayments = () => {
                       <option value="">-- Select Plan --</option>
                       {plans.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name} (${p.price})
+                          {p.name} (₹{Number(p.price).toLocaleString('en-IN')})
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div className="form-group">
-                    <label className="admin-form-label">Amount Paid ($) *</label>
+                    <label className="admin-form-label">Amount Paid (₹) *</label>
                     <input
                       type="number"
                       step="0.01"

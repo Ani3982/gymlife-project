@@ -25,6 +25,22 @@ const AdminNavbar = ({ onToggleSidebar, pageTitle = 'Dashboard' }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // Synchronize avatar & user info whenever updated in profile
+  useEffect(() => {
+    const handleUserUpdate = () => {
+      try {
+        const saved = localStorage.getItem('gymlife_user');
+        if (saved) setAdminUser(JSON.parse(saved));
+      } catch {}
+    };
+    window.addEventListener('adminUserUpdated', handleUserUpdate);
+    window.addEventListener('storage', handleUserUpdate);
+    return () => {
+      window.removeEventListener('adminUserUpdated', handleUserUpdate);
+      window.removeEventListener('storage', handleUserUpdate);
+    };
+  }, []);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {

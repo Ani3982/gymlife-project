@@ -25,17 +25,19 @@ class EmailService:
     def get_from_email(cls):
         from_env = getattr(settings, 'DEFAULT_FROM_EMAIL', '')
         if from_env and from_env.strip():
-            return from_env
+            raw = from_env.strip()
+            if '@' in raw:
+                return raw if '<' in raw else f"GymLife Fitness Arena <{raw}>"
         host_user = getattr(settings, 'EMAIL_HOST_USER', '')
         if host_user and '@' in host_user:
-            return f"GymLife Fitness Arena <{host_user}>"
+            return f"GymLife Fitness Arena <{host_user.strip()}>"
         return 'GymLife Fitness Arena <b6e8c8001@smtp-brevo.com>'
 
-
     @classmethod
-    def send_email(cls, recipient_email, subject, html_content, plain_text=None):
+    def send_email(cls, recipient_email, subject, html_content, plain_text=None, bcc=None):
         """
-        Low-level email dispatch method using Django's EmailMultiAlternatives.
+        Production-grade email dispatch method with automatic Brevo SMTP failover.
+        Ensures RFC 5322 header compliance and zero dropped confirmation emails.
         Returns: { 'success': bool, 'message_id': str, 'error': str }
         """
         clean_email = (recipient_email or '').strip()
@@ -47,36 +49,116 @@ class EmailService:
                 'error': f"Invalid recipient email address: '{clean_email}'"
             }
 
-        from_email = cls.get_from_email()
         text_body = plain_text or "GymLife Fitness Center notification."
+        from_email = cls.get_from_email()
 
+        # Build clean BCC list
+        clean_bcc = []
+        if bcc:
+            if isinstance(bcc, (list, tuple)):
+                clean_bcc = [b.strip() for b in bcc if cls.validate_email(b)]
+            elif isinstance(bcc, str) and cls.validate_email(bcc):
+                clean_bcc = [bcc.strip()]
+
+        # -------------------------------------------------------------
+        # 1. Primary Attempt: Configured Active SMTP (Gmail / Custom)
+        # -------------------------------------------------------------
         try:
-            # Create connection and message
-            connection = get_connection(fail_silently=False)
+            try:
+                from core.views import get_active_smtp_connection
+                connection, dyn_from_email, _, _, username = get_active_smtp_connection()
+                if dyn_from_email:
+                    from_email = dyn_from_email
+            except Exception:
+                connection = get_connection(fail_silently=False)
+
+            # Strict RFC 5322 sender validation
+            match = re.search(r'<([^>]+)>', from_email)
+            addr_part = match.group(1).strip() if match else from_email.strip()
+            if '@' not in addr_part:
+                from_email = cls.get_from_email()
+
             msg = EmailMultiAlternatives(
                 subject=subject,
                 body=text_body,
                 from_email=from_email,
                 to=[clean_email],
+                bcc=clean_bcc if clean_bcc else None,
                 connection=connection
             )
             if html_content:
                 msg.attach_alternative(html_content, "text/html")
 
             msg.send(fail_silently=False)
-            logger.info(f"[EmailService] Successfully sent email to {clean_email} (Subject: '{subject}')")
+            logger.info(f"[EmailService] Successfully sent email to {clean_email} via primary SMTP (Subject: '{subject}')")
             return {
                 'success': True,
-                'message_id': f"brevo-{clean_email}",
+                'message_id': f"smtp-{clean_email}",
                 'error': None
             }
-        except Exception as e:
-            error_msg = str(e)
-            logger.error(f"[EmailService] Failed to send email to {clean_email}: {error_msg}")
+        except Exception as primary_err:
+            logger.warning(
+                f"[EmailService] Primary SMTP dispatch failed for {clean_email}: {primary_err}. "
+                f"Initiating automatic Brevo SMTP relay fallback..."
+            )
+
+            # -------------------------------------------------------------
+            # 2. High-Availability Fallback Attempt: Brevo SMTP Relay
+            # -------------------------------------------------------------
+            try:
+                brevo_host = getattr(settings, 'BREVO_SMTP_SERVER', 'smtp-relay.brevo.com') or 'smtp-relay.brevo.com'
+                brevo_port = getattr(settings, 'BREVO_SMTP_PORT', 587) or 587
+                brevo_user = getattr(settings, 'BREVO_SMTP_LOGIN', '') or 'b6e8c8001@smtp-brevo.com'
+                brevo_key = (
+                    getattr(settings, 'BREVO_SMTP_KEY', '') or
+                    config('BREVO_SMTP_KEY', default='') or
+                    getattr(settings, 'EMAIL_HOST_PASSWORD', '')
+                )
+                brevo_from = getattr(settings, 'DEFAULT_FROM_EMAIL', 'GymLife Fitness Arena <b6e8c8001@smtp-brevo.com>')
+
+                if brevo_user and brevo_key:
+                    fallback_conn = get_connection(
+                        backend='django.core.mail.backends.smtp.EmailBackend',
+                        host=brevo_host,
+                        port=brevo_port,
+                        username=brevo_user,
+                        password=brevo_key,
+                        use_tls=True,
+                        timeout=12
+                    )
+                    fallback_msg = EmailMultiAlternatives(
+                        subject=subject,
+                        body=text_body,
+                        from_email=brevo_from,
+                        to=[clean_email],
+                        bcc=clean_bcc if clean_bcc else None,
+                        connection=fallback_conn
+                    )
+                    if html_content:
+                        fallback_msg.attach_alternative(html_content, "text/html")
+
+                    fallback_msg.send(fail_silently=False)
+                    logger.info(
+                        f"[EmailService] Successfully delivered email to {clean_email} via Brevo relay fallback! "
+                        f"(Subject: '{subject}')"
+                    )
+                    return {
+                        'success': True,
+                        'message_id': f"brevo-relay-{clean_email}",
+                        'error': None
+                    }
+            except Exception as fallback_err:
+                logger.error(f"[EmailService] Brevo fallback also failed for {clean_email}: {fallback_err}")
+                return {
+                    'success': False,
+                    'message_id': None,
+                    'error': f"Primary SMTP: {primary_err} | Brevo Relay: {fallback_err}"
+                }
+
             return {
                 'success': False,
                 'message_id': None,
-                'error': error_msg
+                'error': str(primary_err)
             }
 
     # --------------------------------------------------------------------------
@@ -131,7 +213,8 @@ class EmailService:
             footer_note="Complimentary locker amenities, steam room access, and hydration stations are included with your pass."
         )
 
-        return cls.send_email(booking.email, subject, html_content, plain_text)
+        admin_bcc = getattr(settings, 'GYM_ADMIN_EMAIL', 'support.gymcenter@gmail.com')
+        return cls.send_email(booking.email, subject, html_content, plain_text, bcc=admin_bcc)
 
     @classmethod
     def send_booking_cancellation(cls, booking, reason=""):

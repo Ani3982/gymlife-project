@@ -135,11 +135,11 @@ const AdminMemberships = () => {
       )
     },
     {
-      header: 'Price ($)',
+      header: 'Price (₹)',
       key: 'price',
       sortable: true,
       render: (val) => (
-        <span className="price-tag-highlight">${parseFloat(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+        <span className="price-tag-highlight">₹{parseFloat(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}</span>
       )
     },
     {
@@ -262,7 +262,7 @@ const AdminMemberships = () => {
                   </div>
 
                   <div className="form-group">
-                    <label className="admin-form-label">Price ($) *</label>
+                    <label className="admin-form-label">Price (₹) *</label>
                     <input
                       type="number"
                       step="0.01"

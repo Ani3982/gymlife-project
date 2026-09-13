@@ -34,11 +34,12 @@ export const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
+    const cleanName = user.displayName || (user.email ? user.email.split('@')[0].split(/[\._\-]/).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') : 'Alex Rivers');
     return {
       success: true,
       user: {
         id: user.uid,
-        name: user.displayName || 'Google Athlete',
+        name: cleanName,
         email: user.email,
         photoURL: user.photoURL,
         role: 'member',
@@ -60,10 +61,10 @@ export const signInWithGoogle = async () => {
       return {
         success: true,
         user: {
-          id: 'google-athlete-772',
-          name: 'Google Athlete (Demo User)',
-          email: 'athlete.google@gymlife.com',
-          photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+          id: 'google-alex-rivers',
+          name: 'Alex Rivers',
+          email: 'alex.rivers@gmail.com',
+          photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
           role: 'member',
           plan: '12 Month VIP Membership',
           joined_date: 'August 2026'
