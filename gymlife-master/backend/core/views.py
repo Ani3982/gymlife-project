@@ -509,6 +509,12 @@ def get_blog_detail(request, pk):
             return JsonResponse({'status': 'error', 'message': 'Blog post not found'}, status=404)
 
 def get_pricing_plans(request):
+    try:
+        PricingPlan.objects.filter(price=39).update(price=499, name='Class Drop-in Pass', period='SINGLE PASS')
+        PricingPlan.objects.filter(price=59).update(price=8999, name='6 Month Active Membership', period='6 MONTHS ACCESS')
+        PricingPlan.objects.filter(price=99).update(price=14999, name='12 Month VIP Membership', period='12 MONTHS UNLIMITED')
+    except Exception:
+        pass
     plans = PricingPlan.objects.filter(status='ACTIVE').order_by('order')
     return JsonResponse([serialize_plan(p) for p in plans], safe=False)
 

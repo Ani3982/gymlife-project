@@ -150,21 +150,43 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Reverse Proxy SSL Header for Render / Cloud Platforms
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # CORS & CSRF Configuration
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=DEBUG, cast=bool)
-CORS_ALLOWED_ORIGINS = [
-    o.strip() for o in config(
-        'CORS_ALLOWED_ORIGINS',
-        default="http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174"
-    ).split(',') if o.strip()
-]
-CSRF_TRUSTED_ORIGINS = [
-    o.strip() for o in config(
-        'CSRF_TRUSTED_ORIGINS',
-        default="http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174"
-    ).split(',') if o.strip()
-]
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+DEFAULT_CORS_ORIGINS = (
+    "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174,"
+    "https://gymlife-project.vercel.app,https://gymlife-project.onrender.com"
+)
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in config('CORS_ALLOWED_ORIGINS', default=DEFAULT_CORS_ORIGINS).split(',') if o.strip()
+]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https:\/\/.*\.vercel\.app$",
+    r"^https:\/\/.*\.onrender\.com$",
+]
+
+DEFAULT_CSRF_ORIGINS = (
+    "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174,"
+    "https://*.vercel.app,https://gymlife-project.vercel.app,https://*.onrender.com,https://gymlife-project.onrender.com"
+)
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in config('CSRF_TRUSTED_ORIGINS', default=DEFAULT_CSRF_ORIGINS).split(',') if o.strip()
+]
 
 # Production SSL & Cookie Hardening
 if not DEBUG:

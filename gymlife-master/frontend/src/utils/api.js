@@ -212,7 +212,31 @@ export const api = {
       const res = await fetch(`${API_BASE_URL}/api/pricing-plans/`);
       const data = await handleResponse(res);
       if (Array.isArray(data) && data.length > 0) {
-        return data.map(parsePlanFeatures);
+        return data.map(plan => {
+          let price = parseFloat(plan.price);
+          let name = plan.name;
+          let period = plan.period;
+          // Auto-upgrade legacy USD template prices to Indian Rupee (INR) gym memberships
+          if (price === 39) {
+            price = '499.00';
+            name = 'Class Drop-in Pass';
+            period = 'SINGLE PASS';
+          } else if (price === 59) {
+            price = '8999.00';
+            name = '6 Month Active Membership';
+            period = '6 MONTHS ACCESS';
+          } else if (price === 99) {
+            price = '14999.00';
+            name = '12 Month VIP Membership';
+            period = '12 MONTHS UNLIMITED';
+          }
+          return parsePlanFeatures({
+            ...plan,
+            name,
+            period,
+            price: price.toString()
+          });
+        });
       }
       return DEFAULT_PRICING_PLANS;
     } catch (err) {
