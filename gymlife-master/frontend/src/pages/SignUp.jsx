@@ -24,22 +24,8 @@ const SignUp = () => {
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const { loginWithGoogle } = useAuth();
 
-  const handleGoogleClick = async () => {
-    setLoading(true);
-    try {
-      const res = await triggerGoogleOAuthPopup();
-      if (res && res.user) {
-        const loginRes = await loginWithGoogle(res.user);
-        showSuccess(`Welcome to GymLife, ${loginRes.user?.name || res.user.name}! 🚀`);
-        navigate('/dashboard');
-        return;
-      }
-      setShowGoogleModal(true);
-    } catch {
-      setShowGoogleModal(true);
-    } finally {
-      setLoading(false);
-    }
+  const handleGoogleClick = () => {
+    setShowGoogleModal(true);
   };
 
   if (isAuthenticated) {

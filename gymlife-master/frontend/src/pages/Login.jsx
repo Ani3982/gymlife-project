@@ -17,26 +17,8 @@ const Login = () => {
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const { loginWithGoogle } = useAuth();
 
-  const handleGoogleClick = async () => {
-    setLoading(true);
-    try {
-      const res = await triggerGoogleOAuthPopup();
-      if (res && res.user) {
-        const loginRes = await loginWithGoogle(res.user);
-        showSuccess(`Welcome back, ${loginRes.user?.name || res.user.name}! 🚀`);
-        if (loginRes.user?.role === 'admin' || loginRes.user?.is_staff) {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/dashboard');
-        }
-        return;
-      }
-      setShowGoogleModal(true);
-    } catch {
-      setShowGoogleModal(true);
-    } finally {
-      setLoading(false);
-    }
+  const handleGoogleClick = () => {
+    setShowGoogleModal(true);
   };
 
   if (isAuthenticated) {
