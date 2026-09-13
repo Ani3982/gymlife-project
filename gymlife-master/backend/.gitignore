@@ -1,0 +1,41 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+server.err.log
+server.out.log
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Environment Variables & Secrets (Never commit secrets to VCS)
+.env
+.env.*
+*.env
+!.env.example
+*.pem
+*.key
+*.cert
+
+# Firebase Credentials & Service Account Keys
+*firebase-adminsdk*.json
+serviceAccountKey*.json
+firebase-credentials.json
+firebase-adminsdk.json
+
+# Databases & Backups (Preserve local dev data, never commit to VCS)
+*.sqlite3
+db.sqlite3
+backups/
+*.dump
+gymlife_backup*.json
+sqlite_dump_backup*.json
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -4,12 +4,12 @@
  * Uses official Google Identity Services (GIS) OAuth 2.0 & Google UserInfo APIs.
  */
 
-// Retrieve Google Client ID from environment, saved settings, or official project ID
+// Retrieve Google Client ID securely from environment variable or user storage
 export const getGoogleClientId = () => {
   return (
     import.meta.env.VITE_GOOGLE_CLIENT_ID ||
     localStorage.getItem('gymlife_google_client_id') ||
-    '845603149869-jpdaoj3o1gim3vvgta8j8os3705m89k9.apps.googleusercontent.com'
+    ''
   );
 };
 
