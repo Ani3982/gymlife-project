@@ -4,12 +4,12 @@
  * Uses official Google Identity Services (GIS) OAuth 2.0 & Google UserInfo APIs.
  */
 
-// Retrieve Google Client ID from environment or saved settings
+// Retrieve Google Client ID from environment, saved settings, or official project ID
 export const getGoogleClientId = () => {
   return (
     import.meta.env.VITE_GOOGLE_CLIENT_ID ||
     localStorage.getItem('gymlife_google_client_id') ||
-    ''
+    '845603149869-jpdaoj3o1gim3vvgta8j8os3705m89k9.apps.googleusercontent.com'
   );
 };
 
@@ -24,6 +24,32 @@ export const saveGoogleClientId = (clientId) => {
  */
 export const isGoogleSDKLoaded = () => {
   return typeof window !== 'undefined' && Boolean(window.google?.accounts?.oauth2);
+};
+
+/**
+ * Opens the official Google Account Chooser in a standalone popup window.
+ * Points directly to accounts.google.com as in real web applications.
+ */
+export const openOfficialGooglePopup = () => {
+  const clientId = getGoogleClientId();
+  if (!clientId) {
+    return null;
+  }
+
+  const width = 500;
+  const height = 620;
+  const left = window.screen.width / 2 - width / 2;
+  const top = window.screen.height / 2 - height / 2;
+
+  const targetUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(window.location.origin)}&response_type=token&scope=openid%20profile%20email&prompt=select_account`;
+
+  const popup = window.open(
+    targetUrl,
+    'GoogleSignInWindow',
+    `width=${width},height=${height},top=${top},left=${left},status=no,toolbar=no,menubar=no,location=yes,resizable=yes,scrollbars=yes`
+  );
+
+  return popup;
 };
 
 /**

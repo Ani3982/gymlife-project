@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   base: '/',
   server: {
+    host: true,
+    port: 5173,
     proxy: {
       '/media': {
         target: 'http://127.0.0.1:8000',

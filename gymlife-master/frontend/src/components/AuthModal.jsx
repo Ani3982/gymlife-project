@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import GoogleAccountModal from './GoogleAccountModal';
-import { triggerGoogleOAuthPopup } from '../utils/googleAuth';
+import { triggerGoogleOAuthPopup, openOfficialGooglePopup, getGoogleClientId } from '../utils/googleAuth';
 
 export const AuthModal = () => {
   const { isAuthModalOpen, authModalTab, closeAuthModal, setAuthModalTab, login, register } = useAuth();
@@ -24,8 +24,30 @@ export const AuthModal = () => {
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const { loginWithGoogle } = useAuth();
 
-  const handleGoogleClick = () => {
-    setShowGoogleModal(true);
+  const handleGoogleClick = async () => {
+    setLoading(true);
+    try {
+      const clientId = getGoogleClientId();
+      if (clientId) {
+        const res = await triggerGoogleOAuthPopup();
+        if (res && res.user) {
+          const loginRes = await loginWithGoogle(res.user);
+          showSuccess(`Welcome to GymLife, ${loginRes.user?.name || res.user.name}! 🚀`);
+          closeAuthModal();
+          return;
+        }
+      } else {
+        setShowGoogleModal(true);
+      }
+    } catch (err) {
+      if (err.message === 'GOOGLE_CLIENT_ID_REQUIRED') {
+        setShowGoogleModal(true);
+      } else {
+        showError(err.message || 'Google Sign-In popup closed or cancelled.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isAuthModalOpen) return null;
